@@ -1,0 +1,73 @@
+'use client';
+
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { LogOut, User, Settings, Search, Compass } from 'lucide-react';
+import { useAuthStore } from '@/lib/auth-store';
+import { getApiClient } from '@roamera/sdk';
+
+export function Navbar() {
+  const router = useRouter();
+  const { user, logout } = useAuthStore();
+
+  const handleLogout = async () => {
+    try {
+      await getApiClient().post('/api/v1/auth/logout');
+    } catch {}
+    logout();
+    router.push('/login');
+  };
+
+  return (
+    <nav className="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
+      <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
+        <Link href="/home" className="flex items-center gap-2">
+          <span className="text-xl">🧭</span>
+          <span className="font-bold text-lg text-slate-900 dark:text-white">Roamera</span>
+        </Link>
+
+        <div className="flex items-center gap-1">
+          <Link
+            href="/home"
+            className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+            title="Home"
+          >
+            <Compass className="h-5 w-5" />
+          </Link>
+          <Link
+            href="/home"
+            className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+            title="Search"
+          >
+            <Search className="h-5 w-5" />
+          </Link>
+          {user && (
+            <>
+              <Link
+                href={`/u/${user.username}`}
+                className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                title="Profile"
+              >
+                <User className="h-5 w-5" />
+              </Link>
+              <Link
+                href="/settings"
+                className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                title="Settings"
+              >
+                <Settings className="h-5 w-5" />
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition text-slate-600 dark:text-slate-400"
+                title="Log out"
+              >
+                <LogOut className="h-5 w-5" />
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </nav>
+  );
+}

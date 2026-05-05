@@ -1,0 +1,74 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# Turborepo
+.turbo/
+
+# Database (local dev only)
+data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Expo
+.expo/
+ios/
+android/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+*.egg-info/
+dist/
+.ruff_cache/
+.mypy_cache/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Misc
+*.tgz
+.vercel
+
+# Local / embedded repos (tracked as part of parent monorepo only)
+.claude/settings.local.json
+
+# AGPL reference — read-only upstream; omit from pushes (see AGENTS.md)
+TREK_alt/

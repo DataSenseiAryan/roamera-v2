@@ -1,0 +1,40 @@
+{
+  "name": "@roamera/mobile",
+  "version": "0.0.1",
+  "main": "index.ts",
+  "private": true,
+  "scripts": {
+    "dev": "expo start",
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --ext .ts,.tsx"
+  },
+  "dependencies": {
+    "@roamera/sdk": "workspace:*",
+    "@roamera/types": "workspace:*",
+    "@tanstack/react-query": "^5.75.2",
+    "axios": "^1.9.0",
+    "expo": "~53.0.9",
+    "expo-router": "~4.0.17",
+    "expo-secure-store": "~14.0.1",
+    "expo-status-bar": "~2.2.3",
+    "i18next": "^24.2.3",
+    "nativewind": "^4.1.23",
+    "react": "19.0.0",
+    "react-i18next": "^15.5.1",
+    "react-native": "0.79.2",
+    "react-native-safe-area-context": "4.14.0",
+    "react-native-screens": "~4.4.0",
+    "zustand": "^5.0.4"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.27.1",
+    "@roamera/config": "workspace:*",
+    "@types/react": "~19.0.10",
+    "tailwindcss": "^3.4.17",
+    "typescript": "~5.8.3"
+  }
+}

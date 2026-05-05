@@ -1,0 +1,325 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  email     String   @unique
+  password  String
+  avatar                  String?
+  bio                     String?
+  emailVerified           Boolean   @default(false)
+  verificationToken       String?   @unique
+  verificationTokenExpiry DateTime?
+  createdAt               DateTime  @default(now())
+
+  journals              Journal[]
+  likes                 Like[]
+  comments              Comment[]
+  following             Follow[]       @relation("follower")
+  followers             Follow[]       @relation("following")
+  notifications         Notification[] @relation("notif_recipient")
+  notificationsTriggered Notification[] @relation("notif_actor")
+  bucketList            BucketList[]
+  hostedMeetways        Meetway[]             @relation("meetway_host")
+  meetwayParticipations MeetwayParticipant[]  @relation("meetway_participant")
+  meetwayMessages       MeetwayMessage[]      @relation("meetway_message")
+  budgetEntries         BudgetEntry[]
+  justSplitGroups       JustSplitGroup[]       @relation("justsplit_creator")
+  justSplitMemberships  JustSplitMember[]      @relation("justsplit_member")
+  justSplitJoinRequests JustSplitJoinRequest[] @relation("justsplit_requests")
+}
+
+model Journal {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  title         String
+  destination   String
+  startDate     DateTime
+  endDate       DateTime
+  activities    String?
+  accommodation String?
+  budget        Float?
+  photos        String   @default("[]")
+  itinerary     String   @default("[]")
+  content       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  likes         Like[]
+  comments      Comment[]
+  notifications Notification[]
+  bucketList    BucketList[]
+  budgetEntries BudgetEntry[]
+  packingLists  PackingList[]
+}
+
+model Like {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  journalId Int
+  type      String   @default("love")
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  journal Journal @relation(fields: [journalId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, journalId, type])
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  journalId Int
+  content   String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  journal Journal @relation(fields: [journalId], references: [id], onDelete: Cascade)
+}
+
+model Destination {
+  id          Int      @id @default(autoincrement())
+  name        String
+  country     String
+  description String
+  coverImage  String
+  category    String   @default("All")
+  tags        String   @default("[]")
+  createdAt   DateTime @default(now())
+}
+
+model Follow {
+  id          Int      @id @default(autoincrement())
+  followerId  Int
+  followingId Int
+  createdAt   DateTime @default(now())
+
+  follower  User @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+}
+
+model BucketList {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  destination String
+  journalId   Int
+  createdAt   DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  journal Journal @relation(fields: [journalId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, journalId])
+}
+
+model Notification {
+  id               Int      @id @default(autoincrement())
+  userId           Int
+  actorId          Int
+  type             String
+  journalId        Int?
+  justsplitGroupId Int?
+  read             Boolean  @default(false)
+  createdAt        DateTime @default(now())
+
+  user           User            @relation("notif_recipient", fields: [userId],  references: [id], onDelete: Cascade)
+  actor          User            @relation("notif_actor",     fields: [actorId], references: [id], onDelete: Cascade)
+  journal        Journal?        @relation(fields: [journalId], references: [id], onDelete: Cascade)
+  justsplitGroup JustSplitGroup? @relation(fields: [justsplitGroupId], references: [id], onDelete: Cascade)
+}
+
+// ── Budget Tracker ────────────────────────────────────────────────────────────
+
+model BudgetEntry {
+  id        Int      @id @default(autoincrement())
+  journalId Int
+  userId    Int
+  title     String
+  amount    Float
+  category  String   @default("other")
+  date      DateTime @default(now())
+  notes     String?
+  createdAt DateTime @default(now())
+
+  journal   Journal  @relation(fields: [journalId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ── Packing List ──────────────────────────────────────────────────────────────
+
+model PackingList {
+  id        Int      @id @default(autoincrement())
+  journalId Int
+  name      String   @default("Packing List")
+  createdAt DateTime @default(now())
+
+  journal   Journal      @relation(fields: [journalId], references: [id], onDelete: Cascade)
+  items     PackingItem[]
+}
+
+model PackingItem {
+  id            Int      @id @default(autoincrement())
+  packingListId Int
+  name          String
+  category      String   @default("general")
+  quantity      Int      @default(1)
+  essential     Boolean  @default(false)
+  packed        Boolean  @default(false)
+  notes         String?
+  orderIndex    Int      @default(0)
+
+  packingList   PackingList @relation(fields: [packingListId], references: [id], onDelete: Cascade)
+}
+
+// ── JustSplit ─────────────────────────────────────────────────────────────────
+
+model JustSplitGroup {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  currency    String   @default("USD")
+  createdById Int
+  createdAt   DateTime @default(now())
+
+  createdBy    User                   @relation("justsplit_creator", fields: [createdById], references: [id], onDelete: Cascade)
+  members      JustSplitMember[]
+  expenses     JustSplitExpense[]
+  settlements  JustSplitSettlement[]
+  joinRequests JustSplitJoinRequest[]
+  notifications Notification[]
+}
+
+model JustSplitJoinRequest {
+  id        Int      @id @default(autoincrement())
+  groupId   Int
+  userId    Int
+  status    String   @default("pending") // pending | approved | declined
+  message   String?
+  createdAt DateTime @default(now())
+
+  group     JustSplitGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user      User           @relation("justsplit_requests", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+}
+
+model JustSplitMember {
+  id          Int     @id @default(autoincrement())
+  groupId     Int
+  userId      Int?
+  name        String
+
+  group       JustSplitGroup     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user        User?              @relation("justsplit_member", fields: [userId], references: [id], onDelete: SetNull)
+  paidExpenses JustSplitExpense[] @relation("expense_payer")
+  splits      JustSplitSplit[]
+  settlementsFrom JustSplitSettlement[] @relation("settlement_from")
+  settlementsTo   JustSplitSettlement[] @relation("settlement_to")
+
+  @@unique([groupId, userId])
+}
+
+model JustSplitExpense {
+  id            Int      @id @default(autoincrement())
+  groupId       Int
+  paidByMemberId Int
+  title         String
+  amount        Float
+  category      String   @default("general")
+  date          DateTime @default(now())
+  notes         String?
+  createdAt     DateTime @default(now())
+
+  group         JustSplitGroup   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  paidBy        JustSplitMember  @relation("expense_payer", fields: [paidByMemberId], references: [id])
+  splits        JustSplitSplit[]
+}
+
+model JustSplitSplit {
+  id          Int   @id @default(autoincrement())
+  expenseId   Int
+  memberId    Int
+  shareAmount Float
+
+  expense     JustSplitExpense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  member      JustSplitMember  @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([expenseId, memberId])
+}
+
+model JustSplitSettlement {
+  id           Int      @id @default(autoincrement())
+  groupId      Int
+  fromMemberId Int
+  toMemberId   Int
+  amount       Float
+  note         String?
+  createdAt    DateTime @default(now())
+
+  group        JustSplitGroup  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  fromMember   JustSplitMember @relation("settlement_from", fields: [fromMemberId], references: [id])
+  toMember     JustSplitMember @relation("settlement_to",   fields: [toMemberId],   references: [id])
+}
+
+// ── Meetways ──────────────────────────────────────────────────────────────────
+
+model Meetway {
+  id           Int      @id @default(autoincrement())
+  hostId       Int
+  title        String
+  destination  String
+  country      String?
+  startDate    DateTime
+  endDate      DateTime
+  description  String?
+  maxPeople    Int      @default(10)
+  budgetMin    Float?
+  budgetMax    Float?
+  tags         String   @default("[]")   // JSON array of strings
+  privacy      String   @default("public") // "public" | "private"
+  coverTheme   String?
+  coverPhoto   String?
+  itinerary    String   @default("[]")
+  documents    String   @default("[]")
+  status       String   @default("active")  // "active" | "closed" | "completed"
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  host         User                  @relation("meetway_host", fields: [hostId], references: [id], onDelete: Cascade)
+  participants MeetwayParticipant[]
+  messages     MeetwayMessage[]
+}
+
+model MeetwayParticipant {
+  id         Int      @id @default(autoincrement())
+  meetwayId  Int
+  userId     Int
+  role       String   @default("member")   // "host" | "member"
+  status     String   @default("pending")  // "pending" | "approved" | "declined"
+  joinedAt   DateTime @default(now())
+
+  meetway    Meetway  @relation(fields: [meetwayId], references: [id], onDelete: Cascade)
+  user       User     @relation("meetway_participant", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([meetwayId, userId])
+}
+
+model MeetwayMessage {
+  id        Int      @id @default(autoincrement())
+  meetwayId Int
+  userId    Int
+  content   String
+  createdAt DateTime @default(now())
+
+  meetway   Meetway  @relation(fields: [meetwayId], references: [id], onDelete: Cascade)
+  user      User     @relation("meetway_message", fields: [userId], references: [id], onDelete: Cascade)
+}

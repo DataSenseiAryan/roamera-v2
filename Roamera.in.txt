@@ -1,0 +1,457 @@
+PRD
+roamera.in  Web-
+Home -compass Post-moments(“Share a Moment” instead of “share a post”) Story -trails(“Add to trails”) Highlight- miles Reels-vlog
+ 
+  Home /feed (what new can we call this section? l )(Compass)
+- story/reel/photos show(recommended content)  - button for posting story/reel/post /notification -favourites(must) -fellow travelers(people you may know instead fellow travelers you may follow) Save button-(save itinary/duplicate itinerary)  Icons - ❤️ Love
+🔥 Epic
+🌍 Wander
+📍 Wanna go
+🤩 Amazing
+ Mobile-     Journey- Journey
+Title
+Start location
+Route
+Days
+Budget
+Photos
+Tips
+  posts(Moments)-  Image - 3-5 images Location -start location , end location , pit stop Title  Hashtag Details -hotel/hotel price/search by hotel /mode of transportation/weather/(help your fellow travellers)(this boost your profile by making your profile more discoverable and helpful to others) Budget Vacation type - workation/staycation/expedition/trekks/road trip(bike/car)
+song
+  
+
+
+Suggestion-  Photo dalte hi location lekar  Pov shots Auto caption Auto hashtags  You wanna stay on this location- after 3 reels(ek location ki same 3 reel)-button name explore You wanna create itinerary with map routes Suggest 3,5,9 days itinerary -redirect to marketplace   Version 1- https://stitch.withgoogle.com/projects/7558568502638301030  version 2- https://stitch.withgoogle.com/projects/9758563103165334879  Version 3-
+https://stitch.withgoogle.com/projects/6555806581725141356     Minumim screens (web+mobile): https://stitch.withgoogle.com/projects/10097423900105907925   Figma-https://www.figma.com/make/49zHw5sOSWTaVyD3txDwP1/Implement-Feature?t=wBcFNme5ZJSjiGPP-1 
+AI features:
+Recommendation system
+
+prompts
+Packngo initial prompt-  Build Brief for *Pack\&Go* (Frontend Monorepo)
+*One‑liner / Motto:* “Pack\&Go — you travel impromptu, cuz we plan.”
+*Goal:* Generate a production‑ready, responsive *web + mobile* frontend for a modern travel super‑app with AI trip planning, a social marketplace (Travel Circles + curated trips), local experiences/workations, smart expense splits, and a gamified travel layer.
+
+## Output Requirements
+
+  * apps/web: *Next.js * (App Router, TypeScript, shadcn/ui)
+* *Shared packages*:
+
+  * packages/ui: cross‑platform components (Tailwind + react-native-web compatibility)
+  * packages/config: tsconfig/eslint/prettier/tailwind config
+  * packages/types: shared DTOs & zod schemas
+  * packages/sdk: typed API client (OpenAPI or hand‑rolled) with React Query hooks
+* *CI‑ready*: ESLint, Prettier, typecheck, unit tests (Vitest/Jest), basic Playwright e2e for web
+* *Docs*: README.md + ARCHITECTURE.md + comments in code showing where to integrate backend APIs
+
+
+
+
+---
+
+
+
+
+## Tech & Libraries
+
+
+
+
+* *UI*: Tailwind CSS, shadcn/ui (web), react-native + tamagui/nativewind (mobile), Framer Motion (web), Reanimated (mobile)
+* *State/Data*: TanStack Query, Zustand for UI state, Zod for validation
+* *Routing*: Next.js App Router (web), Expo Router (mobile)
+* *Auth*: Email OTP (passwordless) with pluggable adapter (Clerk/Supabase/Auth.js) — put clear TODOs for backend URLs
+* *Realtime*: WebSockets/SSE client stubs (Ably/Pusher/Socket.IO) for chat, polls, notifications
+* *PWA* (web): installable, offline cache (Workbox), prefetching, responsive images
+* *i18n*: next-intl on web, i18next on mobile (scaffold only)
+* *A11y*: aria labels, keyboard nav, color contrast checks
+* *Analytics*: event emitter with providers (PostHog/GA4) – central track() util with typed events
+
+
+
+
+---
+
+
+
+
+## Design System & UX
+
+
+
+
+* *Look/feel*: lively, modern, card‑first; generous white space; soft shadows; rounded‑2xl; subtle gradients; glassy overlays; micro‑interactions
+* *Themes*: light/dark, brand colors (primary teal, accent coral, neutral slate)
+* *Motion*:
+
+
+
+
+  * Page transitions (slide/fade)
+  * Button/CTA hover springs
+  * Story viewer progress bars
+* *Responsive*: mobile‑first; breakpoints for tablet and desktop; bottom tabbar on mobile, left nav on desktop
+
+
+
+
+---
+
+
+
+
+## Core Screens (Web & Mobile parity where sensible)
+
+
+
+
+1. *Onboarding & Auth*
+
+
+
+
+   * Phone/email OTP; capture home city, budget band, interests (treks, cafes, culture, etc.)
+2. *Home / Discover*
+
+
+
+
+   * Card grid of: AI Planner CTA, curated trips (brands/influencers), Travel Circles near you, experiences/events, workations
+3. *AI Planner (Conversational)*
+
+
+
+
+   * Chat‑like UI: user prompt (e.g., “5 days Bali, ₹50k, adventure + cafes”), assistant replies with day‑by‑day itinerary
+   * Sidebar: constraints (budget, dates, visa, weather, flights/hotels availability) + live adjustments
+   * Buttons: “Refine”, “Shuffle day”, “Optimize budget”, “Book pieces”
+4. *Marketplace*
+
+
+
+
+   * Filters: date range, budget, theme (trek/festival/food), organizer type
+   * Listing detail: itinerary snippet, inclusions, map, host profile, join/book CTA
+5. *Travel Circles*
+
+
+
+
+   * Create/join peer‑listed journeys (like BlaBlaCar for leisure)
+   * Circle detail: members, itinerary, chat, polls, expense group link
+6. *Experiences & Events*
+
+
+
+
+   * Aggregation (BookMyShow, Ticketmaster, Meetup) – cards with date/time, location, price, tags
+7. *Workations*
+
+
+
+
+   * Listings with Wi‑Fi speed, desk photos, community vibe, cost, availability
+8. *Trip Detail*
+
+
+
+
+   * Multi‑day plan with drag‑reorder, map of POIs, weather badge, attachments (tickets/receipts)
+   * “Add to Circle”, “Invite friends”, “Export to calendar”
+9. *Expenses*
+
+
+
+
+   * Group ledger, SMS/receipt auto‑parse stubs, split modes (equal/weighted/rotating), UPI/PayTM/GPay settlement buttons
+10. *Stories / Social Proof*
+
+
+
+
+* IG‑style story components: trip highlights, people met, places pinned; share/export
+
+
+
+
+11. *Travel Graph & Gamification*
+
+
+
+
+* Dashboard with yearly recap: places, spend, companions; badges (“Trekker”, “Culture Vulture”, “Eco Explorer”), leaderboards
+
+
+
+
+12. *Notifications*
+
+
+
+
+* Realtime updates (trip changes, poll results, expense reminders)
+
+
+
+
+13. *Profile & Settings*
+
+
+
+
+* Preferences, saved places, payment methods, privacy, notification toggles
+
+
+
+
+---
+
+
+
+
+## Navigation & Layout
+
+
+
+
+* *Web*: App shell with topbar (logo/search/profile), left nav rail (Home, Planner, Marketplace, Circles, Experiences, Workations, Trips, Expenses, Graph, Notifications), main content + right contextual panel
+* *Mobile*: bottom tabs (Home, Planner, Explore, Trips, Profile); modal for quick actions; pull‑to‑refresh
+
+
+
+
+---
+
+
+
+
+## API Integration (Backend‑aware stubs)
+
+
+
+
+Create a *typed SDK* in packages/sdk with React Query hooks. Use env‑driven base URLs and leave clear TODOs to wire the real backend.
+
+
+
+
+*Endpoints (placeholders; create types + hooks):*
+
+
+
+
+* POST /v1/ai/plan → input: preferences, budget, dates → output: itinerary\[] with day/POIs
+* POST /v1/ai/refine → modify an existing plan
+* GET /v1/marketplace/listings → filters: date/theme/budget
+* GET /v1/circles | POST /v1/circles | POST /v1/circles/{id}/join | GET /v1/circles/{id}/chat
+* GET /v1/experiences (bms/ticketmaster/meetup aggregator)
+* GET /v1/workations
+* GET/POST /v1/trips | GET /v1/trips/{id}
+* GET/POST /v1/expenses/groups | POST /v1/expenses/settle
+* GET /v1/gamification/graph | GET /v1/gamification/badges
+* GET /v1/notifications
+* GET /v1/me | POST /v1/auth/otp/start | POST /v1/auth/otp/verify
+
+
+
+
+**Types/DTOs (put in packages/types with zod):**
+
+
+
+
+* User, Trip, DayPlan, POI, Listing, Circle, Message, Poll, ExpenseGroup, ExpenseItem, Badge, TravelGraph
+
+
+
+
+*Hooks examples (generate stubs):*
+
+
+
+
+* usePlanTrip(), useRefinePlan(), useListings(query), useCircles(), useCircleChat(id), useExpenses(groupId), useTravelGraph()
+
+
+
+
+*Error states & skeletons* for all data views.
+
+
+
+
+---
+
+
+
+
+## Key Components to Scaffold
+
+
+
+
+* *Planner*: Chat bubbles, prompt composer, constraint chips, day timeline, action bar, save/share buttons
+* *Cards*: ListingCard, CircleCard, ExperienceCard, WorkationCard, StoryCard, BadgeCard
+* *Maps*: map view + POI pins (abstract provider to swap Mapbox/Google) with SSR‑safe fallbacks
+* *Chat & Polls*: message list (virt‑scroll), composer with attachments, poll widget with live results
+* *Expenses*: ledger table/list, split editor modal, settlement CTA
+* *Story Viewer*: progress bars, swipe navigation, share/export
+* *Travel Graph*: charts (Recharts/Visx) + list summaries
+* *Forms*: zod‑validated reusable forms (preferences, filters)
+
+
+
+
+---
+
+
+
+
+## Payments & UPI (stubs)
+
+
+
+
+* Payment method sheet; UPI intent links on mobile; Razorpay/Stripe checkout modal on web (mock demo mode)
+
+
+
+
+---
+
+
+
+
+## Offline & Sync
+
+
+
+
+* Cache last itinerary and messages; optimistic updates for chat/polls/expense entries; retry queue
+
+
+
+
+---
+
+
+
+
+## File Structure (example)
+
+
+
+
+
+/ apps
+  / web
+    / app (Next App Router)
+      / (routes)
+      / components
+      / lib
+      / providers
+  / mobile
+    / app (Expo Router)
+    / components
+/ packages
+  / ui
+  / sdk
+  / types
+  / config
+
+
+
+
+
+---
+
+
+
+
+## Environment & Config
+
+
+
+
+* .env.example with NEXT_PUBLIC_API_URL, WS_URL, MAPS_TOKEN, PAYMENTS_KEY, ANALYTICS_KEY
+* config/client.ts to read env + export typed config
+
+
+
+
+---
+
+
+
+
+## Testing & Quality
+
+
+
+
+* Unit tests for SDK hooks & utilities
+* Component tests for critical cards/forms
+* Playwright smoke tests: onboarding → planner → create trip → add expense → share story
+
+
+
+
+---
+
+
+
+
+## Deliverables
+
+
+
+
+* Full monorepo with scripts: dev, build, lint, test, e2e
+* Seed mocks/fixtures for lists (marketplace/circles/experiences)
+* Example .http files for API calls
+* Rich inline comments describing backend integration points and TODOs
+
+
+
+
+---
+
+
+
+
+## Nice‑to‑Haves
+
+
+
+
+* Feature flags helper
+* Error boundary pages
+* Simple admin page (toggle featured listings, view reports)
+
+
+
+
+---
+
+
+
+
+## Acceptance Criteria
+
+
+
+
+* Mobile, tablet, web responsive layouts
+* Smooth micro‑interactions and fast navigation
+* Clear boundaries and TODOs for backend integration across all services
+* Developer‑friendly: typed SDK, shared components, documented architecture
+
+> *Build this repo so we can plug in our backend with minimal friction and start user testing immediately.*
+
+this is my project requirement  previously now i want you to write exact requirement for responsive web app that with nextjs 15 and shacnui write prompt for windsurf so that it can write directly code in existing project
+
+Development
+
+Tab 4
+
+Tab 5
+
