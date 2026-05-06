@@ -34,12 +34,12 @@ export default function AccountPage() {
   };
 
   const handleDeleteAccount = async () => {
-    if (!confirm('Are you sure? Your account will be deleted after 30 days.')) return;
+    if (!confirm('Are you sure? Your account will be immediately and permanently deleted. This cannot be undone.')) return;
 
     setDeleting(true);
     try {
       await getApiClient().delete('/api/v1/users/me');
-      toast.success('Account scheduled for deletion');
+      toast.success('Account deleted');
       logout();
       router.push('/login');
     } catch (err: any) {
@@ -91,8 +91,8 @@ export default function AccountPage() {
           <div>
             <h2 className="text-lg font-semibold text-red-600">Danger Zone</h2>
             <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 mb-4">
-              Once you delete your account, you have 30 days to contact support to restore it.
-              After that, all your data will be permanently removed.
+              Deleting your account is immediate and permanent. All your data (posts, trips,
+              comments) will be anonymized and cannot be recovered.
             </p>
             <button
               onClick={handleDeleteAccount}

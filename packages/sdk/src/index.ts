@@ -6,5 +6,7 @@ export * from './hooks/posts';
 export * from './hooks/ai';
 export * from './hooks/travel';
 export * from './hooks/trips';
+export * from './hooks/budget';
+export * from './hooks/packing';
 export * from './hooks/maps';
 export * from './hooks/weather';

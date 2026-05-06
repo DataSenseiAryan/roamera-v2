@@ -4,7 +4,8 @@ import { use, useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import {
-  ArrowLeft, Plus, Users, Share2, Download, Loader2, MapPin, Copy, X
+  ArrowLeft, Plus, Users, Share2, Download, Loader2, MapPin, Copy, X,
+  Calendar, DollarSign, Package,
 } from 'lucide-react';
 import {
   DndContext,
@@ -40,6 +41,8 @@ import { PlaceCard } from '@/components/trips/place-card';
 import { AddPlacePanel } from '@/components/trips/add-place';
 import { MembersModal } from '@/components/trips/members-modal';
 import { WeatherWidget } from '@/components/trips/weather-widget';
+import { BudgetPanel } from '@/components/trips/budget/budget-panel';
+import { PackingPanel } from '@/components/trips/packing/packing-panel';
 
 // Load Leaflet dynamically (SSR-safe)
 const TripMap = dynamic(() => import('@/components/trips/trip-map'), { ssr: false, loading: () => (
@@ -208,6 +211,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ tripId: s
   const [showMembers, setShowMembers] = useState(false);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [copySuccess, setCopySuccess] = useState(false);
+  const [activeTab, setActiveTab] = useState<'itinerary' | 'budget' | 'packing'>('itinerary');
 
   const trip = tripData?.trip;
   const canEdit = trip?.myRole === 'owner' || trip?.myRole === 'editor';
@@ -335,7 +339,28 @@ export default function TripDetailPage({ params }: { params: Promise<{ tripId: s
         </div>
       </div>
 
-      {/* Share URL banner */}
+      <div className="flex gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl w-fit flex-wrap">
+        {([
+          { id: 'itinerary' as const, label: 'Itinerary', icon: Calendar },
+          { id: 'budget' as const, label: 'Budget', icon: DollarSign },
+          { id: 'packing' as const, label: 'Packing', icon: Package },
+        ]).map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition ${
+              activeTab === tab.id
+                ? 'bg-white dark:bg-slate-900 text-teal-600 shadow-sm'
+                : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+            }`}
+          >
+            <tab.icon className="h-4 w-4" />
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
       {shareUrl && (
         <div className="flex items-center gap-3 bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800 rounded-xl px-4 py-3">
           <MapPin className="h-4 w-4 text-teal-600 flex-shrink-0" />
@@ -353,7 +378,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ tripId: s
         </div>
       )}
 
-      {/* Three-panel layout */}
+      {activeTab === 'itinerary' && (
       <div className="flex gap-4 min-h-[calc(100vh-220px)]">
         {/* Left panel: day list */}
         <div className="w-72 flex-shrink-0 overflow-y-auto space-y-3 pb-4">
@@ -462,6 +487,19 @@ export default function TripDetailPage({ params }: { params: Promise<{ tripId: s
           </div>
         )}
       </div>
+      )}
+
+      {activeTab === 'budget' && (
+        <div className="min-h-[calc(100vh-220px)] rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 overflow-hidden overflow-y-auto">
+          <BudgetPanel tripId={tripId} canEdit={canEdit} myRole={trip.myRole} />
+        </div>
+      )}
+
+      {activeTab === 'packing' && (
+        <div className="min-h-[calc(100vh-220px)] rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 overflow-hidden overflow-y-auto">
+          <PackingPanel tripId={tripId} canEdit={canEdit} myRole={trip.myRole} />
+        </div>
+      )}
 
       {showMembers && trip.myRole && (
         <MembersModal tripId={tripId} myRole={trip.myRole} onClose={() => setShowMembers(false)} />

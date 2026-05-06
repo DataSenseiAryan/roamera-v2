@@ -30,7 +30,7 @@ sleep 5 && curl -s http://localhost:3001 | head -5
 
 # 7. (Sprint 3+) Start AI service
 cd apps/ai-service && python -m uvicorn src.main:app --reload &
-sleep 5 && curl -s http://localhost:8000/v1/health | jq .
+sleep 5 && curl -s http://localhost:8000/health | jq .
 ```
 
 ---
@@ -54,7 +54,7 @@ TOKEN=$(curl -s -X POST $BASE/auth/login \
 echo "Token: $TOKEN"
 
 # Get current user
-curl -s $BASE/users/me -H "Authorization: Bearer $TOKEN" | jq .user.username
+curl -s $BASE/auth/me -H "Authorization: Bearer $TOKEN" | jq .user.username
 
 # Update profile
 curl -s -X PATCH $BASE/users/me \
@@ -339,6 +339,137 @@ Every sprint **must** deliver:
 - [x] Weather API: Open-Meteo forecast returns 7-day data (may fail locally due to SSL)
 - [x] WebSocket: authenticated connection via ws_token, room subscriptions work
 - [ ] Real-time collab: two tabs open same trip → add in tab 1 appears in tab 2 (requires browser test)
+
+---
+
+## Sprint 5 — Budget & Packing
+
+### API Smoke Tests
+
+```bash
+BASE=http://localhost:3000/api/v1
+TOKEN=<your-jwt-token>
+
+# --- Budget ---
+
+# Get budget summary (empty initially)
+curl -s $BASE/trips/<tripId>/budget -H "Authorization: Bearer $TOKEN" | jq .grandTotal
+
+# Add budget item
+curl -s -X POST $BASE/trips/<tripId>/budget/items \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"category":"Food","name":"Dinner at cafe","totalPrice":"1500","currency":"INR","persons":2,"days":1}' | jq .item
+
+# Set splits for an item
+curl -s -X POST $BASE/trips/<tripId>/budget/items/<itemId>/splits \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"splits":[{"userId":"<user1>","amount":"750"},{"userId":"<user2>","amount":"750"}]}' | jq .
+
+# Toggle paid
+curl -s -X PATCH $BASE/trips/<tripId>/budget/items/<itemId>/splits/<userId> \
+  -H "Authorization: Bearer $TOKEN" | jq .
+
+# Record settlement
+curl -s -X POST $BASE/trips/<tripId>/budget/settle \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"fromUserId":"<user1>","toUserId":"<user2>","amount":"750","currency":"INR"}' | jq .
+
+# List settlements
+curl -s $BASE/trips/<tripId>/budget/settlements -H "Authorization: Bearer $TOKEN" | jq .settlements
+
+# --- Packing ---
+
+# Get packing list (auto-creates if none)
+curl -s $BASE/trips/<tripId>/packing -H "Authorization: Bearer $TOKEN" | jq .progress
+
+# Add category
+curl -s -X POST $BASE/trips/<tripId>/packing/categories \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Clothing"}' | jq .category
+
+# Add packing item
+curl -s -X POST $BASE/trips/<tripId>/packing/items \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Sunscreen","quantity":1}' | jq .item
+
+# Check item (toggle packed)
+curl -s -X PATCH $BASE/trips/<tripId>/packing/items/<itemId> \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"isPacked":true}' | jq .item.isPacked
+
+# Create bag
+curl -s -X POST $BASE/trips/<tripId>/packing/bags \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Cabin Bag","color":"#3B82F6"}' | jq .bag
+
+# Browse packing templates
+curl -s $BASE/packing-templates -H "Authorization: Bearer $TOKEN" | jq '.templates[].name'
+
+# Apply template
+curl -s -X POST $BASE/trips/<tripId>/packing/templates/apply \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"templateId":"<templateId>"}' | jq .
+```
+
+### Demo Walkthrough (S5)
+
+#### Scene 1: Budget tab — Add expenses
+- Login as arya_explorer
+- Open "Rajasthan Heritage Tour" trip → click **Budget** tab
+- Expected: Seeded budget items visible, grouped by category (Transport, Accommodation, Food, etc.)
+- Grand total card shows total in INR
+
+#### Scene 2: Budget splits & settlements
+- Expand a budget item → see member splits
+- Toggle "paid" for a member
+- Click "Record Settlement" → enter payment details
+- Expected: Balance summary updates, simplified debts recalculated
+
+#### Scene 3: Add new expense
+- Click "Add Expense" button
+- Fill form: category=Activities, name="Camel Safari", price=2000, INR, 2 persons, 1 day
+- Expected: Item appears in Activities category, total updates
+
+#### Scene 4: Packing tab — Checklist
+- Switch to **Packing** tab
+- Expected: Progress bar shows X of Y packed
+- Categories listed: Clothing, Toiletries, Documents
+- Some items already checked (from seed)
+
+#### Scene 5: Pack items
+- Check unchecked items → progress bar updates
+- Add new item: "Power bank" in category "Electronics"
+- Expected: Item appears, progress denominator increases
+
+#### Scene 6: Bags
+- View bags section (Cabin Bag visible from seed)
+- Create new bag: "Check-in Luggage"
+- Assign items to bags
+- Expected: Bag shows item count
+
+#### Scene 7: Apply template
+- Click "Apply Template" → select "Beach Vacation"
+- Expected: Template categories and items merge into current packing list
+
+#### Scene 8: Real-time collaboration
+- Open same trip in two browser tabs
+- In tab 1: check a packing item
+- Expected: Tab 2 shows the item checked (via WebSocket broadcast)
+
+### Sprint 5 Acceptance Criteria
+- [x] Add 10 budget items across 3 categories → totals correct, multi-currency converted
+- [x] Assign split amounts per person → per-person balance calculated correctly
+- [x] Record a settlement → balance updates and shows settled
+- [x] Apply packing template → items appear in correct categories
+- [x] Check an item → real-time update in other browser tab (WS)
 
 ---
 

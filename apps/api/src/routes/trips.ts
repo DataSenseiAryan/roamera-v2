@@ -16,6 +16,8 @@ import { authenticate, type AuthRequest } from '../middleware/auth';
 import { AppError } from '../middleware/error';
 import { uploadFile, generateStorageKey, getPublicUrl } from '../lib/storage';
 import { getWsManager } from '../lib/ws';
+import budgetRouter from './budget';
+import packingRouter from './packing';
 
 const router = Router();
 const upload = multer({ limits: { fileSize: 5 * 1024 * 1024 }, storage: multer.memoryStorage() });
@@ -142,6 +144,9 @@ router.post('/', authenticate, async (req: AuthRequest, res, next) => {
     res.status(201).json({ success: true, trip: { ...formatTrip(trip!), myRole: 'owner' } });
   } catch (err) { next(err); }
 });
+
+router.use('/:tripId/budget', budgetRouter);
+router.use('/:tripId/packing', packingRouter);
 
 // GET /api/v1/trips/:tripId — trip detail
 router.get('/:tripId', authenticate, async (req: AuthRequest, res, next) => {

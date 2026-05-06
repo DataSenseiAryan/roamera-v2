@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, Sparkles, Download, DollarSign, Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Send, Sparkles, Download, DollarSign, Loader2, Map } from 'lucide-react';
 import { useAIPlan, useOptimizeBudget, streamRefinePlan } from '@roamera/sdk';
 import type { AIItinerary, ChatMessage } from '@roamera/types';
 import { ChatMessageBubble } from '@/components/ai/chat-message';
@@ -30,6 +31,7 @@ export default function AIPlannerPage() {
   const [streamingContent, setStreamingContent] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  const router = useRouter();
   const planMutation = useAIPlan();
   const optimizeMutation = useOptimizeBudget();
 
@@ -243,6 +245,16 @@ export default function AIPlannerPage() {
               >
                 <DollarSign className="h-3.5 w-3.5" />
                 Optimize Budget
+              </button>
+              <button
+                onClick={() => {
+                  sessionStorage.setItem('aiItinerary', JSON.stringify(currentItinerary));
+                  router.push('/trips?importPlan=true');
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-teal-600 bg-teal-50 dark:bg-teal-900/20 dark:text-teal-400 rounded-lg hover:bg-teal-100 transition"
+              >
+                <Map className="h-3.5 w-3.5" />
+                Save as Trip
               </button>
               <button
                 onClick={handleExport}

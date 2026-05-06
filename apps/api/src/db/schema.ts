@@ -461,6 +461,7 @@ export const packingCategories = sqliteTable('packing_categories', {
   id: text('id').primaryKey(),
   listId: text('list_id').notNull().references(() => packingLists.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
+  assigneeUserId: text('assignee_user_id').references(() => users.id),
   sortOrder: integer('sort_order').notNull().default(0),
 });
 
@@ -491,8 +492,27 @@ export const packingTemplates = sqliteTable('packing_templates', {
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(now),
 });
 
+export const packingTemplateCats = sqliteTable('packing_template_cats', {
+  id: text('id').primaryKey(),
+  templateId: text('template_id').notNull().references(() => packingTemplates.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  sortOrder: integer('sort_order').notNull().default(0),
+});
+
+export const packingTemplateItems = sqliteTable('packing_template_items', {
+  id: text('id').primaryKey(),
+  categoryId: text('category_id').notNull().references(() => packingTemplateCats.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  quantity: integer('quantity').notNull().default(1),
+});
+
+export const packingBagItems = sqliteTable('packing_bag_items', {
+  bagId: text('bag_id').notNull().references(() => packingBags.id, { onDelete: 'cascade' }),
+  itemId: text('item_id').notNull().references(() => packingItems.id, { onDelete: 'cascade' }),
+});
+
 // ═════════════════════════════════════════════════════════════════════════════
-// BUDGET (Sprint 5 — skeleton stubs)
+// BUDGET (Sprint 5)
 // ═════════════════════════════════════════════════════════════════════════════
 
 export const budgetItems = sqliteTable('budget_items', {
@@ -507,11 +527,23 @@ export const budgetItems = sqliteTable('budget_items', {
   sortOrder: integer('sort_order').notNull().default(0),
 });
 
-export const budgetItemMembers = sqliteTable('budget_item_members', {
-  budgetItemId: text('budget_item_id').notNull().references(() => budgetItems.id, { onDelete: 'cascade' }),
-  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  amount: text('amount').notNull().default('0'),
-  isPaid: integer('is_paid', { mode: 'boolean' }).notNull().default(false),
+export const budgetItemMembers = sqliteTable(
+  'budget_item_members',
+  {
+    budgetItemId: text('budget_item_id').notNull().references(() => budgetItems.id, { onDelete: 'cascade' }),
+    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    amount: text('amount').notNull().default('0'),
+    isPaid: integer('is_paid', { mode: 'boolean' }).notNull().default(false),
+  },
+  (t) => ({
+    memberUniq: uniqueIndex('budget_item_member_uniq').on(t.budgetItemId, t.userId),
+  }),
+);
+
+export const budgetCategoryOrder = sqliteTable('budget_category_order', {
+  tripId: text('trip_id').notNull().references(() => trips.id, { onDelete: 'cascade' }),
+  category: text('category').notNull(),
+  sortOrder: integer('sort_order').notNull().default(0),
 });
 
 export const settlements = sqliteTable('settlements', {

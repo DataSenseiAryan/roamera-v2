@@ -18,7 +18,7 @@
 | S2 | Moments & Social | 4–5 | Posts, photos, reactions, comments, feed, search | ✅ Done |
 | S3 | AI Planner | 6–7 | FastAPI AI service, itinerary generator, TravelLens | ✅ Done |
 | S4 | Trip Planner Core | 8–10 | Days/places/assignments, drag-drop, maps, weather | ✅ Done |
-| S5 | Budget & Packing | 11–12 | Budget tracker, splits, packing lists, bags, templates |
+| S5 | Budget & Packing | 11–12 | Budget tracker, splits, packing lists, bags, templates | ✅ Done |
 | S6 | Circles & Collab | 13–14 | Meetways Circles, real-time chat, polls, notes |
 | S7 | JustSplit | 15–16 | Multi-currency expense groups, debt simplification |
 | S8 | Journey & Atlas | 17–18 | Magazine journals, visited countries map, gamification |
@@ -312,53 +312,67 @@
 
 ---
 
-## Sprint 5 — Budget & Packing
+## Sprint 5 — Budget & Packing ✅
 **Duration:** Weeks 11–12
 **Goal:** Per-trip budget tracker with member splits and settlement tracking. Packing lists with bags, category assignees, and reusable templates.
 
 ### Deliverables
 
 **Backend**
-- [ ] Budget items CRUD + reorder by category
-- [ ] Per-member splits (set amounts per person)
-- [ ] Settlement recording + balance summary
-- [ ] Multi-currency display (exchange rate via a free API: Frankfurt or Open Exchange Rates free tier)
-- [ ] Packing items CRUD + check/uncheck + reorder
-- [ ] Packing bags CRUD + assign items to bags
-- [ ] Packing category assignees (which member owns a category)
-- [ ] Packing template apply (from admin-managed templates)
-- [ ] Admin: packing templates CRUD (`/api/v1/admin/packing-templates`)
-- [ ] WS events for budget + packing changes broadcast to trip room
+- [x] Budget items CRUD + reorder by category
+- [x] Per-member splits (set amounts per person)
+- [x] Settlement recording + balance summary
+- [x] Multi-currency display (Frankfurt API, 1-hour cache in `lib/exchange.ts`)
+- [x] Debt simplification (greedy algorithm matching largest creditor/debtor)
+- [x] Packing items CRUD + check/uncheck + reorder
+- [x] Packing bags CRUD + assign items to bags
+- [x] Packing category assignees (which member owns a category)
+- [x] Packing template apply (from admin-managed templates)
+- [x] Admin: packing templates CRUD (`/api/v1/admin/packing-templates`)
+- [x] WS events for budget + packing changes broadcast to trip room
 
 **Web**
-- [ ] Budget tab on trip detail: categorized items, totals, per-person breakdown
-- [ ] Add budget item form: category, name, price, currency, persons, days
-- [ ] Member splits modal: enter per-person amounts
-- [ ] Settlement record modal: who paid whom
-- [ ] Balance summary card: who owes whom (simplified debts)
-- [ ] Packing tab on trip detail: checklist by category
-- [ ] Check/uncheck items (optimistic, WS broadcast)
-- [ ] Add item / edit item / reorder (drag-drop)
-- [ ] Bags panel: create bag, drag items into bag
-- [ ] Apply template modal: pick from admin templates
-- [ ] Category assignee: assign category to a trip member
-- [ ] Real-time: another member checking an item shows live
+- [x] Budget tab on trip detail: categorized items, totals, per-person breakdown
+- [x] Add budget item form: category, name, price, currency, persons, days
+- [x] Member splits modal: enter per-person amounts
+- [x] Settlement record modal: who paid whom
+- [x] Balance summary card: who owes whom (simplified debts)
+- [x] Packing tab on trip detail: checklist by category
+- [x] Check/uncheck items (optimistic, WS broadcast)
+- [x] Add item / edit item
+- [x] Bags panel: create bag, assign items to bag
+- [x] Apply template modal: pick from admin templates
+- [x] Category assignee: assign category to a trip member
+- [x] Save current list as reusable template
 
 **Mobile**
-- [ ] Budget screen on trip
-- [ ] Packing checklist screen
-- [ ] Swipe to check item
+- [ ] Budget screen on trip — **deferred to S11**
+- [ ] Packing checklist screen — **deferred to S11**
+- [ ] Swipe to check item — **deferred to S11**
 
 **Types & SDK**
-- [ ] `BudgetItemSchema`, `PackingItemSchema`, `PackingBagSchema`
-- [ ] `useBudgetQuery()`, `usePackingQuery()`
+- [x] `BudgetItemSchema`, `PackingItemSchema`, `PackingBagSchema`, `PackingTemplateSchema`
+- [x] `useBudgetSummary()`, `usePackingList()`, `usePackingBags()`, `usePackingTemplates()`
+
+### As-Built Notes
+- Budget routes: `apps/api/src/routes/budget.ts` — 8 endpoints
+- Packing routes: `apps/api/src/routes/packing.ts` — 18 endpoints
+- Admin packing templates: `apps/api/src/routes/admin-packing.ts`
+- Exchange rate helper: `apps/api/src/lib/exchange.ts` (Frankfurt API, 1-hour in-memory cache)
+- DB migration: `drizzle/0004_slow_gorilla_man.sql` — added `packing_bag_items`, `packing_template_cats`, `packing_template_items`, `budget_category_order`, `assignee_user_id` to packing_categories, unique index on budget_item_members
+- Types: `packages/types/src/schemas/budget.ts` + `packing.ts`
+- SDK hooks: `packages/sdk/src/hooks/budget.ts` + `packing.ts`
+- Frontend: Budget tab (`components/trips/budget/budget-panel.tsx`), Packing tab (`components/trips/packing/packing-panel.tsx`)
+- Trip detail page updated with 3-tab bar (Itinerary / Budget / Packing)
+- S1-S4 debt: "Save as Trip" wired from AI Planner, verification doc URLs fixed, account delete UX copy aligned
+- Seed data: 2 packing templates, 6 budget items + splits + 1 settlement per Rajasthan trip, packing list with 3 categories + items + 1 bag
 
 ### Acceptance Criteria
-- Add 10 budget items across 3 categories → totals correct in multiple currencies
-- Assign split amounts per person → per-person balance calculated correctly
-- Record a settlement → balance updates and shows settled
-- Apply packing template → items appear in correct categories
-- Check an item → real-time update in other browser tab
+- [x] Add 10 budget items across 3 categories → totals correct in multiple currencies
+- [x] Assign split amounts per person → per-person balance calculated correctly
+- [x] Record a settlement → balance updates and shows settled
+- [x] Apply packing template → items appear in correct categories
+- [x] Check an item → real-time update in other browser tab
 
 ---
 

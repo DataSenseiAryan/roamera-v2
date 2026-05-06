@@ -3,7 +3,31 @@ import crypto from 'crypto';
 import { eq } from 'drizzle-orm';
 
 import { db } from './db/client';
-import { users, destinations, follows, userSettings, posts, reactions, comments, trips, tripMembers, days, places, dayAssignments, dayNotes } from './db/schema';
+import {
+  users,
+  destinations,
+  follows,
+  userSettings,
+  posts,
+  reactions,
+  comments,
+  trips,
+  tripMembers,
+  days,
+  places,
+  dayAssignments,
+  dayNotes,
+  packingLists,
+  packingCategories,
+  packingItems,
+  packingBags,
+  packingTemplates,
+  packingTemplateCats,
+  packingTemplateItems,
+  budgetItems,
+  budgetItemMembers,
+  settlements,
+} from './db/schema';
 
 const PASSWORD = 'password123';
 
@@ -415,6 +439,153 @@ async function seed() {
       console.log('  Created 2 demo trips with days, places, and assignments');
     } else {
       console.log('  Trips already seeded — skipping');
+    }
+  }
+
+  // ─── Sprint 5: Packing templates, trip budget, splits, settlement, packing list ─
+  const rajTrip = await db.query.trips.findFirst({
+    where: (t, { eq: e }) => e(t.title, 'Rajasthan Heritage Tour'),
+  });
+
+  const aryaUser = createdUsers.find((u) => u.username === 'arya_explorer');
+  const marcoUser = createdUsers.find((u) => u.username === 'marco_travels');
+
+  if (rajTrip && aryaUser && marcoUser) {
+    const existingBudgetItems = await db.select().from(budgetItems).where(eq(budgetItems.tripId, rajTrip.id));
+
+    if (existingBudgetItems.length === 0) {
+      // Admin packing templates
+      const beachTplId = crypto.randomUUID();
+      const mountainTplId = crypto.randomUUID();
+
+      await db.insert(packingTemplates).values([
+        { id: beachTplId, name: 'Beach Vacation', description: 'Sun, sand, and swim-ready essentials.', createdBy: null },
+        { id: mountainTplId, name: 'Mountain Trek', description: 'High-altitude trekking checklist.', createdBy: null },
+      ]).onConflictDoNothing();
+
+      const beachClothingCat = crypto.randomUUID();
+      const beachToiletriesCat = crypto.randomUUID();
+      const beachElectronicsCat = crypto.randomUUID();
+
+      await db.insert(packingTemplateCats).values([
+        { id: beachClothingCat, templateId: beachTplId, name: 'Clothing', sortOrder: 0 },
+        { id: beachToiletriesCat, templateId: beachTplId, name: 'Toiletries', sortOrder: 1 },
+        { id: beachElectronicsCat, templateId: beachTplId, name: 'Electronics', sortOrder: 2 },
+      ]).onConflictDoNothing();
+
+      await db.insert(packingTemplateItems).values([
+        { id: crypto.randomUUID(), categoryId: beachClothingCat, name: 'Swimsuit', quantity: 1 },
+        { id: crypto.randomUUID(), categoryId: beachClothingCat, name: 'Sunhat', quantity: 1 },
+        { id: crypto.randomUUID(), categoryId: beachClothingCat, name: 'Sandals', quantity: 1 },
+        { id: crypto.randomUUID(), categoryId: beachClothingCat, name: 'Beach wrap', quantity: 1 },
+        { id: crypto.randomUUID(), categoryId: beachToiletriesCat, name: 'Sunscreen SPF 50', quantity: 1 },
+        { id: crypto.randomUUID(), categoryId: beachToiletriesCat, name: 'Aloe vera gel', quantity: 1 },
+        { id: crypto.randomUUID(), categoryId: beachToiletriesCat, name: 'Waterproof phone pouch', quantity: 1 },
+        { id: crypto.randomUUID(), categoryId: beachElectronicsCat, name: 'Portable charger', quantity: 1 },
+        { id: crypto.randomUUID(), categoryId: beachElectronicsCat, name: 'Camera', quantity: 1 },
+      ]).onConflictDoNothing();
+
+      const mountainClothingCat = crypto.randomUUID();
+      const mountainGearCat = crypto.randomUUID();
+      const mountainToiletriesCat = crypto.randomUUID();
+
+      await db.insert(packingTemplateCats).values([
+        { id: mountainClothingCat, templateId: mountainTplId, name: 'Clothing', sortOrder: 0 },
+        { id: mountainGearCat, templateId: mountainTplId, name: 'Gear', sortOrder: 1 },
+        { id: mountainToiletriesCat, templateId: mountainTplId, name: 'Toiletries', sortOrder: 2 },
+      ]).onConflictDoNothing();
+
+      await db.insert(packingTemplateItems).values([
+        { id: crypto.randomUUID(), categoryId: mountainClothingCat, name: 'Hiking boots', quantity: 1 },
+        { id: crypto.randomUUID(), categoryId: mountainClothingCat, name: 'Rain jacket', quantity: 1 },
+        { id: crypto.randomUUID(), categoryId: mountainClothingCat, name: 'Thermal layers', quantity: 1 },
+        { id: crypto.randomUUID(), categoryId: mountainClothingCat, name: 'Quick-dry pants', quantity: 1 },
+        { id: crypto.randomUUID(), categoryId: mountainGearCat, name: 'Backpack 40L', quantity: 1 },
+        { id: crypto.randomUUID(), categoryId: mountainGearCat, name: 'Trekking poles', quantity: 1 },
+        { id: crypto.randomUUID(), categoryId: mountainGearCat, name: 'Headlamp', quantity: 1 },
+        { id: crypto.randomUUID(), categoryId: mountainGearCat, name: 'First aid kit', quantity: 1 },
+        { id: crypto.randomUUID(), categoryId: mountainToiletriesCat, name: 'Lip balm SPF', quantity: 1 },
+        { id: crypto.randomUUID(), categoryId: mountainToiletriesCat, name: 'Sunscreen', quantity: 1 },
+        { id: crypto.randomUUID(), categoryId: mountainToiletriesCat, name: 'Hand sanitizer', quantity: 1 },
+      ]).onConflictDoNothing();
+
+      // Rajasthan trip budget
+      const biTrain = crypto.randomUUID();
+      const biRickshaw = crypto.randomUUID();
+      const biHotel = crypto.randomUUID();
+      const biFood = crypto.randomUUID();
+      const biActivities = crypto.randomUUID();
+      const biShopping = crypto.randomUUID();
+
+      await db.insert(budgetItems).values([
+        { id: biTrain, tripId: rajTrip.id, category: 'Transport', name: 'Delhi to Jaipur train', totalPrice: '1200', currency: 'INR', persons: 2, days: 1, sortOrder: 0 },
+        { id: biRickshaw, tripId: rajTrip.id, category: 'Transport', name: 'Local rickshaw rides', totalPrice: '500', currency: 'INR', persons: 2, days: 4, sortOrder: 1 },
+        { id: biHotel, tripId: rajTrip.id, category: 'Accommodation', name: 'Haveli Heritage Hotel', totalPrice: '3500', currency: 'INR', persons: 2, days: 3, sortOrder: 2 },
+        { id: biFood, tripId: rajTrip.id, category: 'Food', name: 'Street food & restaurants', totalPrice: '800', currency: 'INR', persons: 2, days: 4, sortOrder: 3 },
+        { id: biActivities, tripId: rajTrip.id, category: 'Activities', name: 'Amber Fort entry', totalPrice: '500', currency: 'INR', persons: 2, days: 1, sortOrder: 4 },
+        { id: biShopping, tripId: rajTrip.id, category: 'Shopping', name: 'Jaipur bazaar souvenirs', totalPrice: '2000', currency: 'INR', persons: 1, days: 1, sortOrder: 5 },
+      ]).onConflictDoNothing();
+
+      await db.insert(budgetItemMembers).values([
+        { budgetItemId: biTrain, userId: aryaUser.id, amount: '600', isPaid: true },
+        { budgetItemId: biTrain, userId: marcoUser.id, amount: '600', isPaid: false },
+        { budgetItemId: biRickshaw, userId: aryaUser.id, amount: '250', isPaid: false },
+        { budgetItemId: biRickshaw, userId: marcoUser.id, amount: '250', isPaid: true },
+        { budgetItemId: biHotel, userId: aryaUser.id, amount: '1750', isPaid: true },
+        { budgetItemId: biHotel, userId: marcoUser.id, amount: '1750', isPaid: true },
+      ]).onConflictDoNothing();
+
+      await db.insert(settlements).values({
+        id: crypto.randomUUID(),
+        tripId: rajTrip.id,
+        fromUserId: aryaUser.id,
+        toUserId: marcoUser.id,
+        amount: '1500',
+        currency: 'INR',
+      }).onConflictDoNothing();
+
+      // Rajasthan packing list + cabin bag
+      const listId = crypto.randomUUID();
+      await db.insert(packingLists).values({
+        id: listId,
+        tripId: rajTrip.id,
+        title: 'Packing List',
+      }).onConflictDoNothing();
+
+      const catClothing = crypto.randomUUID();
+      const catToiletries = crypto.randomUUID();
+      const catDocuments = crypto.randomUUID();
+
+      await db.insert(packingCategories).values([
+        { id: catClothing, listId, name: 'Clothing', sortOrder: 0 },
+        { id: catToiletries, listId, name: 'Toiletries', sortOrder: 1 },
+        { id: catDocuments, listId, name: 'Documents', sortOrder: 2 },
+      ]).onConflictDoNothing();
+
+      await db.insert(packingItems).values([
+        { id: crypto.randomUUID(), listId, categoryId: catClothing, name: 'Kurta', quantity: 1, isPacked: true, sortOrder: 0 },
+        { id: crypto.randomUUID(), listId, categoryId: catClothing, name: 'Comfortable pants', quantity: 1, isPacked: true, sortOrder: 1 },
+        { id: crypto.randomUUID(), listId, categoryId: catClothing, name: 'Sun hat', quantity: 1, isPacked: false, sortOrder: 2 },
+        { id: crypto.randomUUID(), listId, categoryId: catClothing, name: 'Walking shoes', quantity: 1, isPacked: true, sortOrder: 3 },
+        { id: crypto.randomUUID(), listId, categoryId: catToiletries, name: 'Sunscreen', quantity: 1, isPacked: false, sortOrder: 0 },
+        { id: crypto.randomUUID(), listId, categoryId: catToiletries, name: 'Hand sanitizer', quantity: 1, isPacked: true, sortOrder: 1 },
+        { id: crypto.randomUUID(), listId, categoryId: catToiletries, name: 'Wet wipes', quantity: 1, isPacked: false, sortOrder: 2 },
+        { id: crypto.randomUUID(), listId, categoryId: catDocuments, name: 'ID proof', quantity: 1, isPacked: true, sortOrder: 0 },
+        { id: crypto.randomUUID(), listId, categoryId: catDocuments, name: 'Hotel bookings printout', quantity: 1, isPacked: true, sortOrder: 1 },
+        { id: crypto.randomUUID(), listId, categoryId: catDocuments, name: 'Train tickets', quantity: 1, isPacked: false, sortOrder: 2 },
+      ]).onConflictDoNothing();
+
+      await db.insert(packingBags).values({
+        id: crypto.randomUUID(),
+        listId,
+        name: 'Cabin Bag',
+        color: '#3B82F6',
+        weightLimitKg: '7',
+      }).onConflictDoNothing();
+
+      console.log('  Seeded Sprint 5 demo (templates, Rajasthan budget, splits, settlement, packing)');
+    } else {
+      console.log('  Sprint 5 budget already present — skipping Sprint 5 seed');
     }
   }
 

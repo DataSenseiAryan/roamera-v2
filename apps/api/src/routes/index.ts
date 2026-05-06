@@ -12,6 +12,7 @@ import travelRouter from './travel';
 import tripsRouter from './trips';
 import mapsRouter from './maps';
 import weatherRouter from './weather';
+import { adminRouter as adminPackingRouter, publicRouter as publicPackingTemplatesRouter } from './admin-packing';
 
 const router = Router();
 
@@ -39,6 +40,9 @@ router.use('/api/v1/travel', travelRouter);
 router.use('/api/v1/trips', tripsRouter);
 router.use('/api/v1/maps', mapsRouter);
 router.use('/api/v1/weather', weatherRouter);
+
+router.use('/api/v1/admin/packing-templates', adminPackingRouter);
+router.use('/api/v1/packing-templates', publicPackingTemplatesRouter);
 
 // Sprint 6: Circles (added in S6)
 // router.use('/api/v1/circles', circlesRouter);

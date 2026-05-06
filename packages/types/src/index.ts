@@ -16,3 +16,6 @@ export * from './schemas/travel';
 
 // Trip Planner (Sprint 4)
 export * from './schemas/trips';
+
+export * from './schemas/budget';
+export * from './schemas/packing';

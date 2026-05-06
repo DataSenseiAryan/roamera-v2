@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Map, Plus, Calendar, Users, Globe, Loader2 } from 'lucide-react';
 import { useTripsQuery } from '@roamera/sdk';
-import type { Trip } from '@roamera/types';
+import type { Trip, AIItinerary } from '@roamera/types';
 import { CreateTripModal } from '@/components/trips/create-trip-modal';
 
 function TripCard({ trip }: { trip: Trip & { myRole?: string } }) {
@@ -64,8 +65,23 @@ function TripCard({ trip }: { trip: Trip & { myRole?: string } }) {
 }
 
 export default function TripsPage() {
+  const searchParams = useSearchParams();
   const [showCreate, setShowCreate] = useState(false);
+  const [aiItinerary, setAiItinerary] = useState<AIItinerary | null>(null);
   const { data: trips, isLoading } = useTripsQuery();
+
+  useEffect(() => {
+    if (searchParams.get('importPlan') === 'true') {
+      try {
+        const stored = sessionStorage.getItem('aiItinerary');
+        if (stored) {
+          setAiItinerary(JSON.parse(stored));
+          sessionStorage.removeItem('aiItinerary');
+        }
+      } catch { /* ignore parse errors */ }
+      setShowCreate(true);
+    }
+  }, [searchParams]);
 
   return (
     <div className="space-y-6">
@@ -115,7 +131,12 @@ export default function TripsPage() {
         </div>
       )}
 
-      {showCreate && <CreateTripModal onClose={() => setShowCreate(false)} />}
+      {showCreate && (
+        <CreateTripModal
+          onClose={() => { setShowCreate(false); setAiItinerary(null); }}
+          aiItinerary={aiItinerary}
+        />
+      )}
     </div>
   );
 }

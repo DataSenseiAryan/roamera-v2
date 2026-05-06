@@ -184,30 +184,40 @@ hashtags[], itinerary_json
 | `PATCH` | `/:tripId/accommodations/:id` | auth (editor) | Update |
 | `DELETE` | `/:tripId/accommodations/:id` | auth (editor) | Delete |
 
-### 5.8 Budget
+### 5.8 Budget ✅ Implemented (S5)
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| `GET`  | `/:tripId/budget` | auth (member) | Budget summary + items |
+| `GET`  | `/:tripId/budget` | auth (member) | Budget summary + items + debts |
 | `POST` | `/:tripId/budget/items` | auth (editor) | Add budget item |
 | `PATCH` | `/:tripId/budget/items/:id` | auth (editor) | Update item |
 | `DELETE` | `/:tripId/budget/items/:id` | auth (editor) | Delete item |
 | `POST` | `/:tripId/budget/items/:id/splits` | auth (editor) | Set member splits |
+| `PATCH` | `/:tripId/budget/items/:id/splits/:userId` | auth (editor) | Toggle isPaid |
 | `POST` | `/:tripId/budget/settle` | auth (editor) | Record settlement |
+| `GET`  | `/:tripId/budget/settlements` | auth (member) | List settlements |
 
-### 5.9 Packing
+### 5.9 Packing ✅ Implemented (S5)
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| `GET`  | `/:tripId/packing` | auth (member) | Packing list |
+| `GET`  | `/:tripId/packing` | auth (member) | Full packing list + progress |
 | `POST` | `/:tripId/packing/items` | auth (editor) | Add item |
 | `PATCH` | `/:tripId/packing/items/:id` | auth (member) | Update (check/uncheck/rename/reorder) |
 | `DELETE` | `/:tripId/packing/items/:id` | auth (editor) | Delete item |
-| `GET`  | `/:tripId/packing/bags` | auth (member) | Bags list |
+| `POST` | `/:tripId/packing/items/reorder` | auth (editor) | Bulk reorder items |
+| `GET`  | `/:tripId/packing/categories` | auth (member) | List categories + assignees |
+| `POST` | `/:tripId/packing/categories` | auth (editor) | Add category |
+| `PATCH` | `/:tripId/packing/categories/:id` | auth (editor) | Update category |
+| `DELETE` | `/:tripId/packing/categories/:id` | auth (editor) | Delete category + cascade |
+| `GET`  | `/:tripId/packing/bags` | auth (member) | Bags list + item counts |
 | `POST` | `/:tripId/packing/bags` | auth (editor) | Add bag |
 | `PATCH` | `/:tripId/packing/bags/:id` | auth (editor) | Update bag |
 | `DELETE` | `/:tripId/packing/bags/:id` | auth (editor) | Delete bag |
+| `POST` | `/:tripId/packing/bags/:id/items` | auth (editor) | Assign item to bag |
+| `DELETE` | `/:tripId/packing/bags/:id/items/:itemId` | auth (editor) | Remove item from bag |
 | `POST` | `/:tripId/packing/templates/apply` | auth (editor) | Apply packing template |
+| `POST` | `/:tripId/packing/templates/save` | auth (editor) | Save list as template |
 
 ### 5.10 Collab (Chat, Notes, Polls)
 
@@ -524,8 +534,17 @@ Connection: `wss://api.roamera.in/ws?token=<ws_token>`
 | `note:created` | `trip:{id}` | `{ id, dayId, content }` | Day note added |
 | `note:updated` | `trip:{id}` | `{ id, dayId, content }` | Day note edited |
 | `note:deleted` | `trip:{id}` | `{ noteId }` | Day note removed |
-| `budget:updated` | `trip:{id}` | `{ tripId, summary }` | Budget item changed |
-| `packing:updated` | `trip:{id}` | `{ tripId, item }` | Packing item checked/added |
+| `budget:created` | `trip:{id}` | `{ tripId, item }` | Budget item added |
+| `budget:updated` | `trip:{id}` | `{ tripId, item }` | Budget item changed |
+| `budget:deleted` | `trip:{id}` | `{ tripId, itemId }` | Budget item removed |
+| `budget:splits_updated` | `trip:{id}` | `{ tripId, itemId }` | Splits changed |
+| `budget:settled` | `trip:{id}` | `{ tripId, settlement }` | Settlement recorded |
+| `packing:item_created` | `trip:{id}` | `{ tripId, item }` | Packing item added |
+| `packing:item_updated` | `trip:{id}` | `{ tripId, item }` | Packing item changed/checked |
+| `packing:item_deleted` | `trip:{id}` | `{ tripId, itemId }` | Packing item removed |
+| `packing:category_updated` | `trip:{id}` | `{ tripId, category }` | Category changed |
+| `packing:bag_updated` | `trip:{id}` | `{ tripId, bag }` | Bag changed |
+| `packing:template_applied` | `trip:{id}` | `{ tripId, templateId }` | Template applied |
 | `collab:message` | `trip:{id}` | `{ tripId, message }` | New chat message |
 | `collab:reaction` | `trip:{id}` | `{ tripId, messageId, reaction }` | Message reaction added |
 | `collab:poll_new` | `trip:{id}` | `{ tripId, poll }` | New poll created |
