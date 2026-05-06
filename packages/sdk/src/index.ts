@@ -5,3 +5,6 @@ export * from './hooks/users';
 export * from './hooks/posts';
 export * from './hooks/ai';
 export * from './hooks/travel';
+export * from './hooks/trips';
+export * from './hooks/maps';
+export * from './hooks/weather';

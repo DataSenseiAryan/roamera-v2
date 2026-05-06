@@ -13,3 +13,6 @@ export * from './schemas/posts';
 // AI Planner & TravelLens (Sprint 3)
 export * from './schemas/ai';
 export * from './schemas/travel';
+
+// Trip Planner (Sprint 4)
+export * from './schemas/trips';

@@ -188,10 +188,10 @@ router.post('/me/avatar', authenticate, uploadRateLimit, upload.single('avatar')
 // DELETE /me
 router.delete('/me', authenticate, async (req: AuthRequest, res, next) => {
   try {
-    // Soft delete by changing role to 'deleted' equivalent — we'll use a convention
-    // Since schema has enum ['user', 'admin'], we set email to a deleted marker
+    // Soft delete: mark role as 'deleted' and anonymize PII
     await db.update(users)
       .set({
+        role: 'deleted',
         email: `deleted_${Date.now()}_${req.user!.id}@deleted.roamera.in`,
         username: `deleted_${Date.now().toString(36)}`,
         passwordHash: null,
@@ -312,6 +312,16 @@ router.get('/:userId/posts', optionalAuthenticate, async (req: AuthRequest, res,
     });
     if (!user) throw new AppError('User not found', 404);
 
+    let cursorCondition;
+    if (cursor) {
+      try {
+        const decoded = JSON.parse(Buffer.from(cursor, 'base64').toString()) as { createdAt: number; id: string };
+        cursorCondition = sql`(${posts.createdAt}, ${posts.id}) < (${decoded.createdAt}, ${decoded.id})`;
+      } catch {
+        cursorCondition = undefined;
+      }
+    }
+
     const userPosts = await db
       .select()
       .from(posts)
@@ -319,9 +329,7 @@ router.get('/:userId/posts', optionalAuthenticate, async (req: AuthRequest, res,
         and(
           eq(posts.userId, userId),
           eq(posts.isPublished, true),
-          cursor
-            ? sql`(${posts.createdAt}, ${posts.id}) < (${new Date(Buffer.from(cursor, 'base64').toString()).toISOString()}, '')`
-            : undefined,
+          cursorCondition,
         ),
       )
       .orderBy(desc(posts.createdAt))
@@ -398,8 +406,14 @@ router.get('/:userId/posts', optionalAuthenticate, async (req: AuthRequest, res,
       }),
     );
 
-    const nextCursor = hasMore
-      ? Buffer.from(items[items.length - 1].createdAt?.toString() ?? '').toString('base64')
+    const lastItem = items[items.length - 1];
+    const nextCursor = hasMore && lastItem
+      ? Buffer.from(JSON.stringify({
+          createdAt: lastItem.createdAt instanceof Date
+            ? Math.floor(lastItem.createdAt.getTime() / 1000)
+            : lastItem.createdAt,
+          id: lastItem.id,
+        })).toString('base64')
       : null;
 
     res.json({ success: true, posts: formatted, nextCursor, hasMore });

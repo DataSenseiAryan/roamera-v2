@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { eq } from 'drizzle-orm';
 
 import { db } from './db/client';
-import { users, destinations, follows, userSettings, posts, reactions, comments } from './db/schema';
+import { users, destinations, follows, userSettings, posts, reactions, comments, trips, tripMembers, days, places, dayAssignments, dayNotes } from './db/schema';
 
 const PASSWORD = 'password123';
 
@@ -295,6 +295,127 @@ async function seed() {
       }).where(eq(posts.id, p.id));
     }
     console.log('  Updated post counts');
+  }
+
+  // ─── Sprint 4: Demo Trips ────────────────────────────────────────
+  if (createdUsers.length >= 2) {
+    const existingTrips = await db.select().from(trips).limit(1);
+    if (existingTrips.length === 0) {
+      const tripData = [
+        {
+          id: crypto.randomUUID(),
+          ownerId: createdUsers[0].id,
+          title: 'Rajasthan Heritage Tour',
+          description: 'A week-long journey through the palaces and forts of Rajasthan.',
+          dateFrom: new Date('2026-11-01'),
+          dateTo: new Date('2026-11-07'),
+          currency: 'INR',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          id: crypto.randomUUID(),
+          ownerId: createdUsers[2].id,
+          title: 'Goa Beach Getaway',
+          description: 'Sun, sand, and seafood — the perfect tropical escape.',
+          dateFrom: new Date('2026-12-20'),
+          dateTo: new Date('2026-12-25'),
+          currency: 'INR',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
+
+      for (const trip of tripData) {
+        await db.insert(trips).values(trip).onConflictDoNothing();
+      }
+
+      // Trip 1 — Rajasthan: add owner + one member
+      await db.insert(tripMembers).values([
+        { tripId: tripData[0].id, userId: createdUsers[0].id, role: 'owner', createdAt: new Date() },
+        { tripId: tripData[0].id, userId: createdUsers[1].id, role: 'editor', invitedBy: createdUsers[0].id, createdAt: new Date() },
+      ]).onConflictDoNothing();
+
+      // Trip 2 — Goa
+      await db.insert(tripMembers).values([
+        { tripId: tripData[1].id, userId: createdUsers[2].id, role: 'owner', createdAt: new Date() },
+        { tripId: tripData[1].id, userId: createdUsers[3].id, role: 'viewer', invitedBy: createdUsers[2].id, createdAt: new Date() },
+      ]).onConflictDoNothing();
+
+      // Days for Trip 1 — Rajasthan (4 days)
+      const rajDays = [
+        { id: crypto.randomUUID(), tripId: tripData[0].id, dayNumber: 1, title: 'Arrival in Jaipur', date: new Date('2026-11-01'), notes: 'Check in early, explore the city centre.' },
+        { id: crypto.randomUUID(), tripId: tripData[0].id, dayNumber: 2, title: 'Amber Fort & City Palace', date: new Date('2026-11-02'), notes: null },
+        { id: crypto.randomUUID(), tripId: tripData[0].id, dayNumber: 3, title: 'Jodhpur — Blue City', date: new Date('2026-11-03'), notes: null },
+        { id: crypto.randomUUID(), tripId: tripData[0].id, dayNumber: 4, title: 'Udaipur — City of Lakes', date: new Date('2026-11-04'), notes: 'Boat ride on Lake Pichola at sunset.' },
+      ];
+
+      for (const day of rajDays) {
+        await db.insert(days).values(day).onConflictDoNothing();
+      }
+
+      // Days for Trip 2 — Goa (3 days)
+      const goaDays = [
+        { id: crypto.randomUUID(), tripId: tripData[1].id, dayNumber: 1, title: 'Arrival & North Goa', date: new Date('2026-12-20'), notes: 'Head straight to Baga Beach.' },
+        { id: crypto.randomUUID(), tripId: tripData[1].id, dayNumber: 2, title: 'Old Goa & Spice Plantation', date: new Date('2026-12-21'), notes: null },
+        { id: crypto.randomUUID(), tripId: tripData[1].id, dayNumber: 3, title: 'South Goa & Relaxation', date: new Date('2026-12-22'), notes: 'Palolem Beach is a must.' },
+      ];
+
+      for (const day of goaDays) {
+        await db.insert(days).values(day).onConflictDoNothing();
+      }
+
+      // Places for Trip 1 — Rajasthan (no categoryId FK — use null)
+      const rajPlaces = [
+        { id: crypto.randomUUID(), tripId: tripData[0].id, name: 'Amber Fort', lat: '26.9855', lng: '75.8513', address: 'Amber, Jaipur, Rajasthan', notes: 'Arrive early to avoid crowds.' },
+        { id: crypto.randomUUID(), tripId: tripData[0].id, name: 'City Palace Jaipur', lat: '26.9258', lng: '75.8237', address: 'Tulsi Marg, Gangori Bazaar, Jaipur', notes: null },
+        { id: crypto.randomUUID(), tripId: tripData[0].id, name: 'Mehrangarh Fort', lat: '26.2979', lng: '73.0185', address: 'Fort Rd, Jodhpur, Rajasthan', notes: 'Best views of the blue city from here.' },
+        { id: crypto.randomUUID(), tripId: tripData[0].id, name: 'Lake Pichola', lat: '24.5754', lng: '73.6801', address: 'Udaipur, Rajasthan', notes: null },
+        { id: crypto.randomUUID(), tripId: tripData[0].id, name: 'Chokhi Dhani Restaurant', lat: '26.8059', lng: '75.7623', address: 'Via Tonk Rd, Jaipur', notes: 'Authentic Rajasthani thali experience.' },
+      ];
+
+      for (const place of rajPlaces) {
+        await db.insert(places).values({ ...place, createdAt: new Date() }).onConflictDoNothing();
+      }
+
+      // Assignments — link places to days (Trip 1)
+      await db.insert(dayAssignments).values([
+        { id: crypto.randomUUID(), tripId: tripData[0].id, dayId: rajDays[1].id, placeId: rajPlaces[0].id, orderIndex: 0, placeTime: '09:00', durationMinutes: 180, notes: 'Book elephant ride in advance.' },
+        { id: crypto.randomUUID(), tripId: tripData[0].id, dayId: rajDays[1].id, placeId: rajPlaces[1].id, orderIndex: 1, placeTime: '13:00', durationMinutes: 120, notes: null },
+        { id: crypto.randomUUID(), tripId: tripData[0].id, dayId: rajDays[1].id, placeId: rajPlaces[4].id, orderIndex: 2, placeTime: '19:00', durationMinutes: 90, notes: null },
+        { id: crypto.randomUUID(), tripId: tripData[0].id, dayId: rajDays[2].id, placeId: rajPlaces[2].id, orderIndex: 0, placeTime: '10:00', durationMinutes: 120, notes: null },
+        { id: crypto.randomUUID(), tripId: tripData[0].id, dayId: rajDays[3].id, placeId: rajPlaces[3].id, orderIndex: 0, placeTime: '17:00', durationMinutes: 60, notes: 'Book boat tickets ahead.' },
+      ]).onConflictDoNothing();
+
+      // Day notes
+      await db.insert(dayNotes).values([
+        { id: crypto.randomUUID(), dayId: rajDays[0].id, text: 'Hotel check-in at 2pm. Rickshaw from airport.', time: '14:00', icon: '🏨', sortOrder: 0 },
+        { id: crypto.randomUUID(), dayId: rajDays[1].id, text: 'Carry water and wear comfortable shoes.', time: null, icon: '💧', sortOrder: 0 },
+      ]).onConflictDoNothing();
+
+      // Places for Trip 2 — Goa (no categoryId FK — use null)
+      const goaPlaces = [
+        { id: crypto.randomUUID(), tripId: tripData[1].id, name: 'Baga Beach', lat: '15.5573', lng: '73.7520', address: 'Baga, North Goa', notes: 'Best beach in North Goa for nightlife.' },
+        { id: crypto.randomUUID(), tripId: tripData[1].id, name: 'Basilica of Bom Jesus', lat: '15.5009', lng: '73.9116', address: 'Old Goa', notes: 'UNESCO World Heritage Site.' },
+        { id: crypto.randomUUID(), tripId: tripData[1].id, name: 'Palolem Beach', lat: '15.0100', lng: '74.0232', address: 'Palolem, South Goa', notes: 'One of the most beautiful beaches in India.' },
+        { id: crypto.randomUUID(), tripId: tripData[1].id, name: 'Thalassa Greek Restaurant', lat: '15.5490', lng: '73.7597', address: 'Vagator, North Goa', notes: 'Sunset views + Greek-Mediterranean fusion.' },
+      ];
+
+      for (const place of goaPlaces) {
+        await db.insert(places).values({ ...place, createdAt: new Date() }).onConflictDoNothing();
+      }
+
+      await db.insert(dayAssignments).values([
+        { id: crypto.randomUUID(), tripId: tripData[1].id, dayId: goaDays[0].id, placeId: goaPlaces[0].id, orderIndex: 0, placeTime: '15:00', durationMinutes: 180, notes: null },
+        { id: crypto.randomUUID(), tripId: tripData[1].id, dayId: goaDays[0].id, placeId: goaPlaces[3].id, orderIndex: 1, placeTime: '19:30', durationMinutes: 120, notes: 'Reservations recommended.' },
+        { id: crypto.randomUUID(), tripId: tripData[1].id, dayId: goaDays[1].id, placeId: goaPlaces[1].id, orderIndex: 0, placeTime: '10:00', durationMinutes: 90, notes: null },
+        { id: crypto.randomUUID(), tripId: tripData[1].id, dayId: goaDays[2].id, placeId: goaPlaces[2].id, orderIndex: 0, placeTime: '09:00', durationMinutes: 240, notes: 'Full day at the beach.' },
+      ]).onConflictDoNothing();
+
+      console.log('  Created 2 demo trips with days, places, and assignments');
+    } else {
+      console.log('  Trips already seeded — skipping');
+    }
   }
 
   console.log('Seed complete!');

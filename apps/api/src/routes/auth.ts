@@ -27,6 +27,7 @@ import {
 import { authenticate, type AuthRequest } from '../middleware/auth';
 import { authRateLimit } from '../middleware/rate-limit';
 import { AppError } from '../middleware/error';
+import { getPublicUrl } from '../lib/storage';
 
 const router = Router();
 
@@ -45,7 +46,7 @@ function formatUserResponse(user: typeof users.$inferSelect, extra?: {
     email: user.email,
     bio: user.bio,
     homeCity: user.homeCity,
-    avatarUrl: user.avatarKey ? `/uploads/${user.avatarKey}` : null,
+    avatarUrl: getPublicUrl(user.avatarKey),
     budgetBand: user.budgetBand,
     interests: user.interests,
     role: user.role,

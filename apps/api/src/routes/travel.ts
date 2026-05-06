@@ -195,18 +195,33 @@ router.get('/hotels', authenticate, async (req: AuthRequest, res, next) => {
     const deepLinks = hotelDeepLinks(cityName, checkin, checkout, parseInt(adults, 10));
     const client = getAmadeusClient();
 
-    if (!client || !cityCode) {
+    // Resolve city code: use explicit cityCode or fallback map for city name
+    const cityCodeMap: Record<string, string> = {
+      goa: 'GOI', mumbai: 'BOM', delhi: 'DEL', 'new delhi': 'DEL',
+      jaipur: 'JAI', bangalore: 'BLR', bengaluru: 'BLR',
+      chennai: 'MAA', kolkata: 'CCU', hyderabad: 'HYD',
+      pune: 'PNQ', ahmedabad: 'AMD', kochi: 'COK', cochin: 'COK',
+      varanasi: 'VNS', agra: 'AGR', amritsar: 'ATQ', udaipur: 'UDR',
+      dubai: 'DXB', singapore: 'SIN', london: 'LON', paris: 'CDG',
+      bangkok: 'BKK', tokyo: 'TYO', 'new york': 'JFK', sydney: 'SYD',
+      bali: 'DPS', 'kuala lumpur': 'KUL',
+    };
+    const resolvedCityCode = (cityCode || cityCodeMap[(city || '').toLowerCase()])?.toUpperCase();
+
+    if (!client || !resolvedCityCode) {
       res.json({
         success: true,
         hotels: [],
         deepLinks,
-        message: 'Amadeus API not configured or city code missing — showing search links only',
+        message: resolvedCityCode
+          ? 'Amadeus API not configured — showing search links only'
+          : 'Could not resolve city code for provided city name — showing search links only',
       });
       return;
     }
 
     const { data: hotelList } = await client.referenceData.locations.hotels.byCity.get({
-      cityCode: cityCode.toUpperCase(),
+      cityCode: resolvedCityCode,
     });
 
     const hotelIds = (hotelList as Array<Record<string, unknown>>)

@@ -376,8 +376,8 @@ sequenceDiagram
 
 | Category | Events | Payload |
 |----------|--------|---------|
-| **Trip** | `trip:updated`, `trip:member_added`, `trip:member_removed` | `{ tripId, data }` |
-| **Day/Places** | `day:updated`, `place:created`, `place:updated`, `place:deleted`, `assignment:updated` | `{ tripId, dayId?, placeId?, data }` |
+| **Trip** | `trip:updated`, `member:added`, `member:removed` | `{ tripId, data }` |
+| **Day/Places** | `day:created`, `day:updated`, `day:deleted`, `place:created`, `place:updated`, `place:deleted`, `assignment:created`, `assignment:updated`, `assignment:deleted`, `note:created`, `note:updated`, `note:deleted` | `{ tripId, ... }` |
 | **Budget** | `budget:item_added`, `budget:item_updated`, `budget:settled` | `{ tripId, data }` |
 | **Packing** | `packing:item_checked`, `packing:item_added` | `{ tripId, data }` |
 | **Collab** | `chat:message`, `chat:reaction`, `poll:new`, `poll:voted`, `poll:closed` | `{ tripId, data }` |

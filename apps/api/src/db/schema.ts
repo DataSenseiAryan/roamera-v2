@@ -22,7 +22,7 @@ export const users = sqliteTable(
     username: text('username').notNull().unique(),
     email: text('email').notNull().unique(),
     passwordHash: text('password_hash'),
-    role: text('role', { enum: ['user', 'admin'] }).notNull().default('user'),
+    role: text('role', { enum: ['user', 'admin', 'deleted'] }).notNull().default('user'),
     emailVerified: integer('email_verified', { mode: 'boolean' }).notNull().default(false),
     bio: text('bio'),
     homeCity: text('home_city'),
@@ -295,18 +295,24 @@ export const notificationPrefs = sqliteTable('notification_prefs', {
 // DESTINATIONS (Sprint 2 — skeleton stub)
 // ═════════════════════════════════════════════════════════════════════════════
 
-export const destinations = sqliteTable('destinations', {
-  id: text('id').primaryKey(),
-  name: text('name').notNull(),
-  country: text('country').notNull(),
-  description: text('description'),
-  category: text('category'),
-  coverKey: text('cover_key'),
-  lat: text('lat'),
-  lng: text('lng'),
-  isFeatured: integer('is_featured', { mode: 'boolean' }).notNull().default(false),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(now),
-});
+export const destinations = sqliteTable(
+  'destinations',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    country: text('country').notNull(),
+    description: text('description'),
+    category: text('category'),
+    coverKey: text('cover_key'),
+    lat: text('lat'),
+    lng: text('lng'),
+    isFeatured: integer('is_featured', { mode: 'boolean' }).notNull().default(false),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(now),
+  },
+  (t) => ({
+    nameUniq: uniqueIndex('destinations_name_uniq').on(t.name),
+  }),
+);
 
 // ═════════════════════════════════════════════════════════════════════════════
 // TRIPS (Sprint 4 — skeleton stubs)

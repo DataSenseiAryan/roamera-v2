@@ -9,6 +9,9 @@ import postsRouter from './posts';
 import feedRouter from './feed';
 import aiRouter from './ai';
 import travelRouter from './travel';
+import tripsRouter from './trips';
+import mapsRouter from './maps';
+import weatherRouter from './weather';
 
 const router = Router();
 
@@ -32,10 +35,10 @@ router.use('/uploads', express.static(path.resolve(process.cwd(), 'data/uploads'
 router.use('/api/v1/ai', aiRouter);
 router.use('/api/v1/travel', travelRouter);
 
-// Sprint 4: Trips (added in S4)
-// router.use('/api/v1/trips', tripsRouter);
-// router.use('/api/v1/maps', mapsRouter);
-// router.use('/api/v1/weather', weatherRouter);
+// Sprint 4: Trips / Maps / Weather
+router.use('/api/v1/trips', tripsRouter);
+router.use('/api/v1/maps', mapsRouter);
+router.use('/api/v1/weather', weatherRouter);
 
 // Sprint 6: Circles (added in S6)
 // router.use('/api/v1/circles', circlesRouter);

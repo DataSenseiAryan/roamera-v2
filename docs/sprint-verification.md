@@ -223,14 +223,122 @@ Each sprint should have a walkthrough script in its plan file. Template:
 
 ---
 
+## API Smoke Tests
+
+### Sprint 4 — Trip Planner, Maps & Weather
+
+```bash
+BASE=http://localhost:3000
+TOKEN=$(curl -s -X POST $BASE/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"arya@demo.roamera.in","password":"password123"}' | jq -r .accessToken)
+
+# List trips (should show Rajasthan Heritage Tour)
+curl -s -H "Authorization: Bearer $TOKEN" $BASE/api/v1/trips | jq '.trips[] | {title, myRole}'
+
+# Get trip detail (use a trip ID from the list)
+TRIP_ID=$(curl -s -H "Authorization: Bearer $TOKEN" $BASE/api/v1/trips | jq -r '.trips[0].id')
+curl -s -H "Authorization: Bearer $TOKEN" $BASE/api/v1/trips/$TRIP_ID | jq '{title: .trip.title, dayCount, memberCount}'
+
+# Get days
+curl -s -H "Authorization: Bearer $TOKEN" $BASE/api/v1/trips/$TRIP_ID/days | jq '.days[] | {dayNumber, title}'
+
+# Get places
+curl -s -H "Authorization: Bearer $TOKEN" $BASE/api/v1/trips/$TRIP_ID/places | jq '.places[] | {name, lat, lng}'
+
+# Get assignments
+curl -s -H "Authorization: Bearer $TOKEN" $BASE/api/v1/trips/$TRIP_ID/assignments | jq '.assignments | length'
+
+# Create a new trip
+curl -s -X POST $BASE/api/v1/trips \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Test S4 Trip","currency":"INR"}' | jq '{id: .trip.id, title: .trip.title}'
+
+# Maps autocomplete
+curl -s -H "Authorization: Bearer $TOKEN" "$BASE/api/v1/maps/autocomplete?q=Jaipur" | jq '.results | length'
+
+# Weather forecast (note: may fail locally due to SSL; works in prod)
+curl -s -H "Authorization: Bearer $TOKEN" "$BASE/api/v1/weather/forecast?lat=26.9&lng=75.8&days=5" | jq '.forecast | length'
+
+# Trip members
+curl -s -H "Authorization: Bearer $TOKEN" $BASE/api/v1/trips/$TRIP_ID/members | jq '.members[] | {username, role}'
+
+# Generate share link
+SHARE=$(curl -s -X POST $BASE/api/v1/trips/$TRIP_ID/share \
+  -H "Authorization: Bearer $TOKEN" | jq -r .shareToken)
+echo "Share token: $SHARE"
+curl -s $BASE/api/v1/trips/shared/$SHARE | jq '{title: .trip.title, dayCount: (.days | length)}'
+```
+
+### Sprint 4 — Demo Walkthrough Scenes
+
+#### Scene 1: Create a new trip
+- Navigate to `/trips`
+- Click "New Trip"
+- Fill in title "Manali Snow Trip", dates, INR currency
+- Click "Create Trip" → redirects to trip detail page
+- Verify: empty day list, leaflet map visible
+
+#### Scene 2: Add days and places
+- On trip detail page, click "+ Add Day" twice
+- On Day 1, click "+" → Add Place panel opens
+- Search "Solang Valley" → select from Nominatim results
+- Click "Add Place" → place appears on day + map marker shows
+
+#### Scene 3: Drag-drop reorder
+- Add 2+ places to Day 1
+- Drag the second place above the first
+- Expected: order persists (API call made)
+
+#### Scene 4: Weather forecast
+- Add a place with known coordinates (e.g. Delhi: 28.6, 77.2)
+- Expected: weather widget shows in day header with temp + icon
+
+#### Scene 5: Real-time collaboration (multi-tab test)
+- Open trip in two browser tabs
+- Add a place in Tab 1
+- Expected: place appears in Tab 2 without refresh (WebSocket)
+- Note: requires browser tab on port 3001, API on 3000, and valid ws_token
+
+#### Scene 6: Share public link
+- Click "Share" in trip header
+- Copy the share link
+- Open in incognito/new window
+- Expected: read-only trip view with all days and places, no login required
+
+#### Scene 7: Members management
+- Click "Members" button
+- Invite `marco_travels` as Editor
+- Expected: member appears in list with editor badge
+- Try as marco_travels: should be able to add places
+
+#### Scene 8: ICS export
+- Click "ICS" download button
+- Expected: `.ics` calendar file downloads
+- Open in Google Calendar or Apple Calendar → events visible
+
+---
+
 ## Working Demo Guarantee
 
 Every sprint **must** deliver:
 - [ ] `pnpm typecheck` passes with zero errors
+- [ ] `pnpm --filter api db:migrate` completes without errors
 - [ ] `pnpm --filter api db:seed` completes without errors
 - [ ] All new API endpoints return HTTP 200 with expected shape
 - [ ] Web app loads and navigates to all new pages without crashes
 - [ ] All seeded demo data is visible in the UI
+
+### Sprint 4 Acceptance Criteria
+- [x] Create trip → add 3 days → add 5 places → drag-drop to reorder → see on map
+- [x] Trip members: invite a member, change role, remove
+- [x] Trip share: generate public link → view read-only trip without login
+- [x] ICS export: download calendar file with trip events
+- [x] Maps API: Nominatim autocomplete returns results
+- [x] Weather API: Open-Meteo forecast returns 7-day data (may fail locally due to SSL)
+- [x] WebSocket: authenticated connection via ws_token, room subscriptions work
+- [ ] Real-time collab: two tabs open same trip → add in tab 1 appears in tab 2 (requires browser test)
 
 ---
 

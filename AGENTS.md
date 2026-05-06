@@ -297,11 +297,18 @@ All password: `password123`
 | S1 | Auth & Profile | ✅ Done — see `docs/plans/sprint-1-auth-profile.md` |
 | S2 | Moments & Social | ✅ Done — see `docs/plans/sprint-2-moments-social.md` |
 | S3 | AI Planner + TravelLens | ✅ Done — see `docs/plans/sprint-3-ai-travellens.md` |
-| S4+ | Trip Planner, Budget, Circles... | 🔜 Upcoming |
+| S4 | Trip Planner Core | ✅ Done — see `docs/plans/sprint-4-trip-planner.md` |
+| S5+ | Budget, Circles, JustSplit... | 🔜 Upcoming |
 
-**Current as-built notes:**
-- WebSocket: server boots and issues `ws_token`, room subscriptions deferred to S4
-- idempotency middleware: wired (S3 debt fix)
-- Public profiles: optionally authenticated (S3 debt fix)
-- AI service: Gemini primary + Groq fallback; requires `GOOGLE_API_KEY` or `GROQ_API_KEY` in `.env`
+**Current as-built notes (S1–S4):**
+- **WebSocket**: `WsManager` class in `apps/api/src/lib/ws.ts` — token auth, room subscriptions, broadcast. Wire: `GET /api/v1/auth/ws-token` → connect WS → subscribe to `trip:{id}` room.
+- **Trip Planner**: Full CRUD for trips, days, places, assignments, notes. WS broadcast on every mutation. Maps (Nominatim/Overpass) + weather (Open-Meteo) proxy routes with cache.
+- **Drag-drop**: `@dnd-kit/core` + `@dnd-kit/sortable` for reorder within day + cross-day move.
+- **Leaflet map**: `react-leaflet` + OSM tiles, loaded dynamically (SSR disabled). Category-colored markers. Auto-fits bounds.
+- **Trip share**: `POST /:tripId/share` generates `shareToken`; public view at `/trips/shared/:token` (no auth).
+- **ICS export**: `GET /:tripId/export/ics` generates `.ics` calendar file from days + assignments.
+- **AI service**: Gemini primary + Groq fallback; requires `GOOGLE_API_KEY` or `GROQ_API_KEY` in `.env`.
+- **Weather API**: Open-Meteo (no key needed). May fail locally with SSL cert issues; set `NODE_TLS_REJECT_UNAUTHORIZED=0` for local dev if needed.
+- **Demo trips**: "Rajasthan Heritage Tour" (arya_explorer, owner) and "Goa Beach Getaway" (leo_backpacker, owner) seeded with days, places, assignments, and notes.
+- **`docs/plans/`**: Sprint plans are archived here. Read the plan for the sprint you're in before making changes.
 - Amadeus: requires `AMADEUS_CLIENT_ID` + `AMADEUS_CLIENT_SECRET`; gracefully degrades to deep-links only

@@ -207,22 +207,24 @@ router.get('/:postId', async (req: AuthRequest, res, next) => {
     });
     if (!post) throw new AppError('Post not found', 404);
 
-    let viewerId: string | undefined;
+    // Resolve viewer id from optional auth token
+    let resolvedViewerId: string | undefined;
     const header = req.headers.authorization;
     if (header?.startsWith('Bearer ')) {
       try {
-        const jwt = await import('jsonwebtoken');
-        const { env } = await import('../lib/env');
-        const payload = jwt.default.verify(header.slice(7), env.JWT_SECRET) as {
-          sub: string;
-        };
-        viewerId = payload.sub;
-      } catch {
-        // public access — no viewer context
-      }
+        const jwtLib = await import('jsonwebtoken');
+        const { env: envLib } = await import('../lib/env');
+        const payload = jwtLib.default.verify(header.slice(7), envLib.JWT_SECRET) as { sub: string };
+        resolvedViewerId = payload.sub;
+      } catch { /* anonymous */ }
     }
 
-    const formatted = await formatPostResponse(post, viewerId);
+    // Only owner can view their unpublished posts
+    if (!post.isPublished && post.userId !== resolvedViewerId) {
+      throw new AppError('Post not found', 404);
+    }
+
+    const formatted = await formatPostResponse(post, resolvedViewerId);
     res.json({ success: true, post: formatted });
   } catch (err) {
     next(err);

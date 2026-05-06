@@ -65,6 +65,7 @@ export async function streamRefinePlan(
 
   const decoder = new TextDecoder();
   let buffer = '';
+  let accumulated = '';
   let finalItinerary: AIItinerary | null = null;
 
   while (true) {
@@ -79,20 +80,30 @@ export async function streamRefinePlan(
       if (line.startsWith('data: ')) {
         const payload = line.slice(6).trim();
         if (payload === '[DONE]') {
+          // Try to parse the accumulated data as itinerary
+          if (accumulated) {
+            try {
+              finalItinerary = JSON.parse(accumulated) as AIItinerary;
+            } catch {
+              // Could not parse — finalItinerary stays null
+            }
+          }
           callbacks.onDone(finalItinerary);
           return;
         }
-        try {
-          const parsed = JSON.parse(payload) as AIItinerary;
-          finalItinerary = parsed;
-          callbacks.onChunk(payload);
-        } catch {
-          callbacks.onChunk(payload);
-        }
+        // Accumulate all non-[DONE] SSE data chunks
+        accumulated += payload;
+        callbacks.onChunk(payload);
       }
     }
   }
 
+  // Stream ended without [DONE] — try to parse what we have
+  if (accumulated) {
+    try {
+      finalItinerary = JSON.parse(accumulated) as AIItinerary;
+    } catch { /* ignore */ }
+  }
   callbacks.onDone(finalItinerary);
 }
 

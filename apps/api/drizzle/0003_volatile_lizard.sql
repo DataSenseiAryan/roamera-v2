@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX `destinations_name_uniq` ON `destinations` (`name`);

@@ -102,7 +102,7 @@ hashtags[], itinerary_json
 
 ---
 
-## 5. Trips — `/api/v1/trips`
+## 5. Trips — `/api/v1/trips` ✅ S4 Implemented
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
@@ -113,41 +113,41 @@ hashtags[], itinerary_json
 | `DELETE` | `/:tripId` | auth (owner) | Delete trip |
 | `POST` | `/:tripId/cover` | auth (owner) | Upload cover image |
 | `POST` | `/:tripId/copy` | auth (member) | Duplicate trip |
-| `GET`  | `/:tripId/bundle` | auth (member) | Full trip offline payload (Dexie sync) |
+| `GET`  | `/:tripId/bundle` | auth (member) | Full trip offline payload — *deferred to S10* |
 | `GET`  | `/:tripId/export/ics` | auth (member) | Export trip as `.ics` calendar |
 | `POST` | `/:tripId/share` | auth (owner) | Create/refresh public share link |
 | `DELETE` | `/:tripId/share` | auth (owner) | Delete share link |
 | `GET`  | `/shared/:token` | [public] | Public trip view (read-only) |
 
-### 5.1 Trip Members
+### 5.1 Trip Members ✅ S4 Implemented
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | `GET`  | `/:tripId/members` | auth (member) | List members + roles |
-| `POST` | `/:tripId/members` | auth (owner) | Add member by username/email |
+| `POST` | `/:tripId/members` | auth (owner) | Add member by username |
 | `PATCH` | `/:tripId/members/:userId` | auth (owner) | Change role |
 | `DELETE` | `/:tripId/members/:userId` | auth (owner) | Remove member |
 
-### 5.2 Trip Days
+### 5.2 Trip Days ✅ S4 Implemented
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | `GET`  | `/:tripId/days` | auth (member) | All days |
 | `POST` | `/:tripId/days` | auth (editor) | Add day |
 | `PATCH` | `/:tripId/days/:dayId` | auth (editor) | Update day title/notes |
-| `DELETE` | `/:tripId/days/:dayId` | auth (editor) | Delete day |
+| `DELETE` | `/:tripId/days/:dayId` | auth (editor) | Delete day + renumber |
 
-### 5.3 Trip Places
+### 5.3 Trip Places ✅ S4 Implemented
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | `GET`  | `/:tripId/places` | auth (member) | All places |
 | `POST` | `/:tripId/places` | auth (editor) | Add place |
 | `PATCH` | `/:tripId/places/:placeId` | auth (editor) | Update place |
-| `DELETE` | `/:tripId/places/:placeId` | auth (editor) | Delete place |
-| `POST` | `/:tripId/places/import/gpx` | auth (editor) | Bulk import from GPX file |
+| `DELETE` | `/:tripId/places/:placeId` | auth (editor) | Delete place + cleanup assignments |
+| `POST` | `/:tripId/places/import/gpx` | auth (editor) | Bulk import from GPX — *post-MVP* |
 
-### 5.4 Trip Assignments (Day ↔ Place links)
+### 5.4 Trip Assignments (Day ↔ Place links) ✅ S4 Implemented
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
@@ -340,24 +340,34 @@ Results include deep-link URLs to Skyscanner / Google Flights / Booking.com for 
 
 ---
 
-## 12. Maps & Places — `/api/v1/maps`
+## 12. Maps & Places — `/api/v1/maps` ✅ S4 Implemented
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | `GET`  | `/search` | auth | `?q=&lat=&lng=` — place text search (Nominatim) |
 | `GET`  | `/autocomplete` | auth | `?q=` — typeahead suggestions |
 | `GET`  | `/reverse` | auth | `?lat=&lng=` — reverse geocode (Nominatim) |
-| `GET`  | `/place` | auth | `?id=&source=osm\|foursquare` — place details |
-| `GET`  | `/overpass` | auth | `?bbox=&types[]=` — POI search via Overpass (OSM) |
+| `GET`  | `/place` | auth | `?id=&source=osm` — place details — *deferred (use `/search`)* |
+| `GET`  | `/overpass` | auth | `?south=&west=&north=&east=&types=` — POI search via Overpass (OSM) |
+
+Notes:
+- Nominatim requires 1 req/sec rate limit — enforced via in-memory throttle
+- Overpass uses `?south,west,north,east` bounding box (not `?bbox`)
+- All results are cached in-memory for 5 minutes
 
 ---
 
-## 13. Weather — `/api/v1/weather`
+## 13. Weather — `/api/v1/weather` ✅ S4 Implemented
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | `GET`  | `/current` | auth | `?lat=&lng=` — current conditions (Open-Meteo) |
 | `GET`  | `/forecast` | auth | `?lat=&lng=&days=` — up to 16-day forecast |
+
+Notes:
+- No API key required (Open-Meteo is free)
+- Cached 5 minutes per `lat,lng,days` key
+- May fail locally if Node.js cannot verify Open-Meteo SSL cert; set `NODE_TLS_REJECT_UNAUTHORIZED=0` for dev
 
 ---
 
@@ -500,13 +510,20 @@ Connection: `wss://api.roamera.in/ws?token=<ws_token>`
 | `subscribed` | — | `{ rooms }` | On subscribe |
 | `pong` | — | `{}` | On ping |
 | `trip:updated` | `trip:{id}` | `{ tripId, data }` | Trip metadata changed |
-| `trip:member_added` | `trip:{id}` | `{ tripId, user }` | Member added to trip |
-| `trip:member_removed` | `trip:{id}` | `{ tripId, userId }` | Member removed |
-| `day:updated` | `trip:{id}` | `{ tripId, dayId, data }` | Day changed |
-| `place:created` | `trip:{id}` | `{ tripId, place }` | Place added |
-| `place:updated` | `trip:{id}` | `{ tripId, place }` | Place edited |
-| `place:deleted` | `trip:{id}` | `{ tripId, placeId }` | Place removed |
-| `assignment:updated` | `trip:{id}` | `{ tripId, assignments }` | Assignment reordered/changed |
+| `member:added` | `trip:{id}` | `{ userId, username, role }` | Member added to trip |
+| `member:removed` | `trip:{id}` | `{ userId }` | Member removed |
+| `day:created` | `trip:{id}` | `{ id, tripId, dayNumber, title }` | Day added |
+| `day:updated` | `trip:{id}` | `{ id, tripId, dayNumber, title }` | Day changed |
+| `day:deleted` | `trip:{id}` | `{ dayId }` | Day removed |
+| `place:created` | `trip:{id}` | `{ id, tripId, name, lat, lng, ... }` | Place added |
+| `place:updated` | `trip:{id}` | `{ id, tripId, name, lat, lng, ... }` | Place edited |
+| `place:deleted` | `trip:{id}` | `{ placeId }` | Place removed |
+| `assignment:created` | `trip:{id}` | `{ id, dayId, placeId, orderIndex }` | Assignment created |
+| `assignment:updated` | `trip:{id}` | `{ id, dayId, placeId, orderIndex }` | Assignment reordered/changed |
+| `assignment:deleted` | `trip:{id}` | `{ assignmentId }` | Assignment removed |
+| `note:created` | `trip:{id}` | `{ id, dayId, content }` | Day note added |
+| `note:updated` | `trip:{id}` | `{ id, dayId, content }` | Day note edited |
+| `note:deleted` | `trip:{id}` | `{ noteId }` | Day note removed |
 | `budget:updated` | `trip:{id}` | `{ tripId, summary }` | Budget item changed |
 | `packing:updated` | `trip:{id}` | `{ tripId, item }` | Packing item checked/added |
 | `collab:message` | `trip:{id}` | `{ tripId, message }` | New chat message |
