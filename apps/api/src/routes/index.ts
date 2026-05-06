@@ -11,6 +11,7 @@ import aiRouter from './ai';
 import travelRouter from './travel';
 import tripsRouter from './trips';
 import circlesRouter from './circles';
+import expensesRouter from './expenses';
 import mapsRouter from './maps';
 import weatherRouter from './weather';
 import { adminRouter as adminPackingRouter, publicRouter as publicPackingTemplatesRouter } from './admin-packing';
@@ -48,7 +49,7 @@ router.use('/api/v1/packing-templates', publicPackingTemplatesRouter);
 router.use('/api/v1/circles', circlesRouter);
 
 // Sprint 7: JustSplit (added in S7)
-// router.use('/api/v1/expenses', expensesRouter);
+router.use('/api/v1/expenses', expensesRouter);
 
 // Sprint 8: Journey + Atlas (added in S8)
 // router.use('/api/v1/journeys', journeysRouter);

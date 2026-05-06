@@ -43,6 +43,13 @@
       "when": 1778085838749,
       "tag": "0005_perpetual_moonstone",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1778091071140,
+      "tag": "0006_blushing_beast",
+      "breakpoints": true
     }
   ]
 }

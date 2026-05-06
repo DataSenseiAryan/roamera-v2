@@ -37,6 +37,11 @@ import {
   collabNotes,
   collabPolls,
   collabPollVotes,
+  expenseGroups,
+  expenseGroupMembers,
+  expenses,
+  expenseSplits,
+  groupSettlements,
 } from './db/schema';
 
 const PASSWORD = 'password123';
@@ -784,6 +789,133 @@ async function seed() {
     }
   } else {
     console.log('  Circles already seeded — skipping Sprint 6');
+  }
+
+  // S7: JustSplit
+  const existingGroups = await db.select().from(expenseGroups).limit(1);
+  if (existingGroups.length === 0) {
+    const aryaUserS7 = createdUsers.find((u) => u.username === 'arya_explorer');
+    const marcoUserS7 = createdUsers.find((u) => u.username === 'marco_travels');
+    const anaUserS7 = createdUsers.find((u) => u.username === 'ana_nomad');
+    const leoUserS7 = createdUsers.find((u) => u.username === 'leo_backpacker');
+    const kenjiUserS7 = createdUsers.find((u) => u.username === 'kenji_wanders');
+
+    const goaCircle = await db.query.circles.findFirst({
+      where: (t, { like: l }) => l(t.title, '%Goa%'),
+    });
+
+    if (aryaUserS7 && marcoUserS7 && anaUserS7 && leoUserS7 && kenjiUserS7) {
+      const goaGroupId = crypto.randomUUID();
+      await db.insert(expenseGroups).values({
+        id: goaGroupId,
+        name: 'Goa Trip Expenses',
+        currency: 'INR',
+        ownerId: aryaUserS7.id,
+        linkedCircleId: goaCircle?.id ?? null,
+        createdAt: new Date(),
+      });
+      await db.insert(expenseGroupMembers).values([
+        { groupId: goaGroupId, userId: aryaUserS7.id, joinedAt: new Date() },
+        { groupId: goaGroupId, userId: marcoUserS7.id, joinedAt: new Date() },
+        { groupId: goaGroupId, userId: anaUserS7.id, joinedAt: new Date() },
+      ]).onConflictDoNothing();
+
+      const memberIds = [aryaUserS7.id, marcoUserS7.id, anaUserS7.id];
+
+      const hotelId = crypto.randomUUID();
+      await db.insert(expenses).values({ id: hotelId, groupId: goaGroupId, paidBy: aryaUserS7.id, description: 'Beach Hotel (2 nights)', amount: '9000', currency: 'INR', category: 'Accommodation', splitType: 'equal', createdAt: new Date() });
+      for (const uid of memberIds) {
+        await db.insert(expenseSplits).values({ id: crypto.randomUUID(), expenseId: hotelId, userId: uid, amount: '3000', isSettled: false }).onConflictDoNothing();
+      }
+
+      const dinnerId = crypto.randomUUID();
+      await db.insert(expenses).values({ id: dinnerId, groupId: goaGroupId, paidBy: marcoUserS7.id, description: 'Seafood dinner', amount: '4500', currency: 'INR', category: 'Food', splitType: 'exact', createdAt: new Date() });
+      await db.insert(expenseSplits).values([
+        { id: crypto.randomUUID(), expenseId: dinnerId, userId: aryaUserS7.id, amount: '2000', isSettled: false },
+        { id: crypto.randomUUID(), expenseId: dinnerId, userId: marcoUserS7.id, amount: '1500', isSettled: false },
+        { id: crypto.randomUUID(), expenseId: dinnerId, userId: anaUserS7.id, amount: '1000', isSettled: false },
+      ]).onConflictDoNothing();
+
+      const taxiId = crypto.randomUUID();
+      await db.insert(expenses).values({ id: taxiId, groupId: goaGroupId, paidBy: anaUserS7.id, description: 'Airport taxi', amount: '1200', currency: 'INR', category: 'Transport', splitType: 'equal', createdAt: new Date() });
+      for (const uid of memberIds) {
+        await db.insert(expenseSplits).values({ id: crypto.randomUUID(), expenseId: taxiId, userId: uid, amount: '400', isSettled: false }).onConflictDoNothing();
+      }
+
+      const surfId = crypto.randomUUID();
+      const surfTotal = 3000;
+      await db.insert(expenses).values({ id: surfId, groupId: goaGroupId, paidBy: aryaUserS7.id, description: 'Surfing lessons', amount: String(surfTotal), currency: 'INR', category: 'Activities', splitType: 'weighted', createdAt: new Date() });
+      await db.insert(expenseSplits).values([
+        { id: crypto.randomUUID(), expenseId: surfId, userId: aryaUserS7.id, amount: '1500', isSettled: false },
+        { id: crypto.randomUUID(), expenseId: surfId, userId: marcoUserS7.id, amount: '900', isSettled: false },
+        { id: crypto.randomUUID(), expenseId: surfId, userId: anaUserS7.id, amount: '600', isSettled: false },
+      ]).onConflictDoNothing();
+
+      const grocId = crypto.randomUUID();
+      await db.insert(expenses).values({ id: grocId, groupId: goaGroupId, paidBy: marcoUserS7.id, description: 'Supermarket groceries', amount: '1800', currency: 'INR', category: 'Food', splitType: 'equal', createdAt: new Date() });
+      for (const uid of memberIds) {
+        await db.insert(expenseSplits).values({ id: crypto.randomUUID(), expenseId: grocId, userId: uid, amount: '600', isSettled: false }).onConflictDoNothing();
+      }
+
+      await db.insert(groupSettlements).values({ id: crypto.randomUUID(), groupId: goaGroupId, fromUserId: anaUserS7.id, toUserId: aryaUserS7.id, amount: '500', currency: 'INR', settledAt: new Date() });
+
+      const rajGroupId = crypto.randomUUID();
+      await db.insert(expenseGroups).values({
+        id: rajGroupId,
+        name: 'Rajasthan Crew',
+        currency: 'INR',
+        ownerId: aryaUserS7.id,
+        linkedCircleId: null,
+        createdAt: new Date(),
+      });
+      await db.insert(expenseGroupMembers).values([
+        { groupId: rajGroupId, userId: aryaUserS7.id, joinedAt: new Date() },
+        { groupId: rajGroupId, userId: leoUserS7.id, joinedAt: new Date() },
+        { groupId: rajGroupId, userId: kenjiUserS7.id, joinedAt: new Date() },
+      ]).onConflictDoNothing();
+
+      const rajMemberIds = [aryaUserS7.id, leoUserS7.id, kenjiUserS7.id];
+
+      const camelId = crypto.randomUUID();
+      await db.insert(expenses).values({ id: camelId, groupId: rajGroupId, paidBy: leoUserS7.id, description: 'Camel safari at Jaisalmer', amount: '3600', currency: 'INR', category: 'Activities', splitType: 'equal', createdAt: new Date() });
+      for (const uid of rajMemberIds) {
+        await db.insert(expenseSplits).values({ id: crypto.randomUUID(), expenseId: camelId, userId: uid, amount: '1200', isSettled: false }).onConflictDoNothing();
+      }
+
+      const rickId = crypto.randomUUID();
+      await db.insert(expenses).values({ id: rickId, groupId: rajGroupId, paidBy: aryaUserS7.id, description: 'Auto rickshaws (Jaipur)', amount: '900', currency: 'INR', category: 'Transport', splitType: 'exact', createdAt: new Date() });
+      await db.insert(expenseSplits).values([
+        { id: crypto.randomUUID(), expenseId: rickId, userId: aryaUserS7.id, amount: '400', isSettled: false },
+        { id: crypto.randomUUID(), expenseId: rickId, userId: leoUserS7.id, amount: '300', isSettled: false },
+        { id: crypto.randomUUID(), expenseId: rickId, userId: kenjiUserS7.id, amount: '200', isSettled: false },
+      ]).onConflictDoNothing();
+
+      const rajHotelId = crypto.randomUUID();
+      await db.insert(expenses).values({ id: rajHotelId, groupId: rajGroupId, paidBy: kenjiUserS7.id, description: 'Heritage haveli room', amount: '7500', currency: 'INR', category: 'Accommodation', splitType: 'equal', createdAt: new Date() });
+      for (const uid of rajMemberIds) {
+        await db.insert(expenseSplits).values({ id: crypto.randomUUID(), expenseId: rajHotelId, userId: uid, amount: '2500', isSettled: false }).onConflictDoNothing();
+      }
+
+      const rajDinnerId = crypto.randomUUID();
+      await db.insert(expenses).values({ id: rajDinnerId, groupId: rajGroupId, paidBy: leoUserS7.id, description: 'Rooftop dinner Udaipur', amount: '2700', currency: 'INR', category: 'Food', splitType: 'equal', createdAt: new Date() });
+      for (const uid of rajMemberIds) {
+        await db.insert(expenseSplits).values({ id: crypto.randomUUID(), expenseId: rajDinnerId, userId: uid, amount: '900', isSettled: false }).onConflictDoNothing();
+      }
+
+      const fortId = crypto.randomUUID();
+      await db.insert(expenses).values({ id: fortId, groupId: rajGroupId, paidBy: aryaUserS7.id, description: 'Amber Fort entry tickets', amount: '1500', currency: 'INR', category: 'Activities', splitType: 'exact', createdAt: new Date() });
+      await db.insert(expenseSplits).values([
+        { id: crypto.randomUUID(), expenseId: fortId, userId: aryaUserS7.id, amount: '500', isSettled: false },
+        { id: crypto.randomUUID(), expenseId: fortId, userId: leoUserS7.id, amount: '500', isSettled: false },
+        { id: crypto.randomUUID(), expenseId: fortId, userId: kenjiUserS7.id, amount: '500', isSettled: false },
+      ]).onConflictDoNothing();
+
+      await db.insert(groupSettlements).values({ id: crypto.randomUUID(), groupId: rajGroupId, fromUserId: kenjiUserS7.id, toUserId: aryaUserS7.id, amount: '1000', currency: 'INR', settledAt: new Date() });
+
+      console.log('  Seeded Sprint 7 demo (JustSplit expense groups)');
+    }
+  } else {
+    console.log('  JustSplit groups already seeded — skipping Sprint 7');
   }
 
   console.log('Seed complete!');

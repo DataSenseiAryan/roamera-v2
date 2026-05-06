@@ -12,3 +12,4 @@ export * from './hooks/maps';
 export * from './hooks/weather';
 export * from './hooks/circles';
 export * from './hooks/collab';
+export * from './hooks/expenses';

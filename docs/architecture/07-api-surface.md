@@ -275,7 +275,7 @@ hashtags[], itinerary_json
 
 ---
 
-## 7. JustSplit (Expense Groups) — `/api/v1/expenses`
+## 7. JustSplit (Expense Groups) — `/api/v1/expenses` ✅ Implemented (S7)
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|

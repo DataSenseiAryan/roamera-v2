@@ -608,3 +608,84 @@ curl -s $BASE/trips/<tripId>/collab/polls -H "Authorization: Bearer $TOKEN" | jq
 - [x] Link circle to a trip → trip title shows in circle sidebar
 - [x] Trip Collab tab: send messages, create notes, create polls
 - [x] Seeded data visible: 2 circles, messages, polls, trip collab notes
+
+---
+
+## Sprint 7 — JustSplit
+
+### API Smoke Tests
+
+```bash
+BASE=http://localhost:3000/api/v1
+TOKEN=<your-jwt-token>
+
+# --- Expense Groups ---
+
+# List groups (should show 2 seeded groups)
+curl -s $BASE/expenses/groups -H "Authorization: Bearer $TOKEN" | jq '[.groups[] | {name, myBalance, currency}]'
+
+# Get group detail with members
+curl -s $BASE/expenses/groups/<groupId> -H "Authorization: Bearer $TOKEN" | jq '{name: .group.name, members: [.members[].username]}'
+
+# Get expenses list
+curl -s $BASE/expenses/groups/<groupId>/expenses -H "Authorization: Bearer $TOKEN" | jq '.expenses | length'
+
+# Add an expense (equal split)
+curl -s -X POST $BASE/expenses/groups/<groupId>/expenses \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"description":"Test lunch","amount":"900","currency":"INR","paidBy":"<userId>","splitType":"equal","category":"Food"}' | jq .expense.id
+
+# Get balances with simplified debts
+curl -s $BASE/expenses/groups/<groupId>/balances -H "Authorization: Bearer $TOKEN" | jq '{members: [.members[] | {username, netBalance}], debts: [.simplifiedDebts[] | "\(.fromUsername) → \(.toUsername): \(.amount) \(.currency)"]}'
+
+# Record a settlement
+curl -s -X POST $BASE/expenses/groups/<groupId>/settle \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"toUserId":"<toUserId>","amount":"1000","currency":"INR"}' | jq .success
+
+# Add member
+curl -s -X POST $BASE/expenses/groups/<groupId>/members \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"username":"kenji_wanders"}' | jq .member.username
+```
+
+### Demo Walkthrough (S7)
+
+#### Scene 1: JustSplit list
+- Login as arya_explorer → click "Split" in navbar (Receipt icon)
+- Expected: "Goa Trip Expenses" (green balance, you're owed) and "Rajasthan Crew" (red balance, you owe)
+
+#### Scene 2: Group detail
+- Open "Goa Trip Expenses"
+- Expected: 5 expenses listed — hotel, seafood dinner, taxi, surfing, groceries
+- Each shows amount, who paid, split type badge (Equal/Exact/Weighted)
+
+#### Scene 3: Balance panel
+- Right sidebar shows per-person balances
+- "Simplified Debts" section: ana_nomad → arya_explorer: ₹3900
+
+#### Scene 4: Add equal expense
+- Click "Add Expense" → fill: "Breakfast", ₹600, paid by arya_explorer, Equal split
+- Expected: Expense appears, balances update
+
+#### Scene 5: Add exact expense
+- Add "Theme park tickets" ₹2400, Exact split
+- Assign: arya=₹1000, marco=₹800, ana=₹600
+- Expected: validation shows ₹2400 = ₹2400 ✓, expense created with correct splits
+
+#### Scene 6: Settle debt
+- In balances panel, click "Settle" on ana_nomad → arya_explorer debt
+- Enter amount: ₹3900
+- Expected: Balance updates, debt disappears from simplified list
+
+### Sprint 7 Acceptance Criteria
+
+- [x] 2 demo groups with 5 expenses each and mixed split types
+- [x] Balance calculation correct (net per member)
+- [x] Debt simplification: multi-person debts reduced to minimal transactions
+- [x] Equal split: auto-calculated per member
+- [x] Settlement recording: balance updates after settle
+- [x] API smoke tests pass: groups, expenses, balances, settle

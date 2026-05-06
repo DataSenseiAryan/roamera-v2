@@ -21,5 +21,4 @@ export * from './schemas/budget';
 export * from './schemas/packing';
 export * from './schemas/circles';
 export * from './schemas/collab';
-export * from './schemas/circles';
-export * from './schemas/collab';
+export * from './schemas/expenses';

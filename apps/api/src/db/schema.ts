@@ -698,7 +698,7 @@ export const collabPollVotes = sqliteTable(
 );
 
 // ═════════════════════════════════════════════════════════════════════════════
-// JUSTSPLIT (Sprint 7 — skeleton stubs)
+// JUSTSPLIT (Sprint 7)
 // ═════════════════════════════════════════════════════════════════════════════
 
 export const expenseGroups = sqliteTable('expense_groups', {
@@ -706,14 +706,21 @@ export const expenseGroups = sqliteTable('expense_groups', {
   name: text('name').notNull(),
   currency: text('currency').notNull().default('INR'),
   ownerId: text('owner_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  linkedCircleId: text('linked_circle_id').references(() => circles.id, { onDelete: 'set null' }),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(now),
 });
 
-export const expenseGroupMembers = sqliteTable('expense_group_members', {
-  groupId: text('group_id').notNull().references(() => expenseGroups.id, { onDelete: 'cascade' }),
-  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  joinedAt: integer('joined_at', { mode: 'timestamp' }).notNull().default(now),
-});
+export const expenseGroupMembers = sqliteTable(
+  'expense_group_members',
+  {
+    groupId: text('group_id').notNull().references(() => expenseGroups.id, { onDelete: 'cascade' }),
+    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    joinedAt: integer('joined_at', { mode: 'timestamp' }).notNull().default(now),
+  },
+  (t) => ({
+    memberUniq: uniqueIndex('expense_group_member_uniq').on(t.groupId, t.userId),
+  }),
+);
 
 export const expenses = sqliteTable('expenses', {
   id: text('id').primaryKey(),
@@ -722,18 +729,36 @@ export const expenses = sqliteTable('expenses', {
   description: text('description').notNull(),
   amount: text('amount').notNull(),
   currency: text('currency').notNull().default('INR'),
+  category: text('category'),
+  notes: text('notes'),
   date: integer('date', { mode: 'timestamp' }),
   splitType: text('split_type', { enum: ['equal', 'weighted', 'exact'] }).notNull().default('equal'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(now),
 });
 
-export const expenseSplits = sqliteTable('expense_splits', {
+export const expenseSplits = sqliteTable(
+  'expense_splits',
+  {
+    id: text('id').primaryKey(),
+    expenseId: text('expense_id').notNull().references(() => expenses.id, { onDelete: 'cascade' }),
+    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    amount: text('amount').notNull(),
+    isSettled: integer('is_settled', { mode: 'boolean' }).notNull().default(false),
+    settledAt: integer('settled_at', { mode: 'timestamp' }),
+  },
+  (t) => ({
+    splitUniq: uniqueIndex('expense_split_uniq').on(t.expenseId, t.userId),
+  }),
+);
+
+export const groupSettlements = sqliteTable('group_settlements', {
   id: text('id').primaryKey(),
-  expenseId: text('expense_id').notNull().references(() => expenses.id, { onDelete: 'cascade' }),
-  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  groupId: text('group_id').notNull().references(() => expenseGroups.id, { onDelete: 'cascade' }),
+  fromUserId: text('from_user_id').notNull().references(() => users.id),
+  toUserId: text('to_user_id').notNull().references(() => users.id),
   amount: text('amount').notNull(),
-  isSettled: integer('is_settled', { mode: 'boolean' }).notNull().default(false),
-  settledAt: integer('settled_at', { mode: 'timestamp' }),
+  currency: text('currency').notNull().default('INR'),
+  settledAt: integer('settled_at', { mode: 'timestamp' }).notNull().default(now),
 });
 
 // ═════════════════════════════════════════════════════════════════════════════

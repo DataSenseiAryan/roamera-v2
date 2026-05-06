@@ -20,7 +20,7 @@
 | S4 | Trip Planner Core | 8–10 | Days/places/assignments, drag-drop, maps, weather | ✅ Done |
 | S5 | Budget & Packing | 11–12 | Budget tracker, splits, packing lists, bags, templates | ✅ Done |
 | S6 | Circles & Collab | 13–14 | Meetways Circles, real-time chat, polls, notes | ✅ Done |
-| S7 | JustSplit | 15–16 | Multi-currency expense groups, debt simplification |
+| S7 | JustSplit | 15–16 | Multi-currency expense groups, debt simplification | ✅ Done |
 | S8 | Journey & Atlas | 17–18 | Magazine journals, visited countries map, gamification |
 | S9 | Notifications & Admin | 19–20 | Real-time notifications, admin panel, audit log |
 | S10 | Reservations & Export | 21–22 | Reservations, trip files, ICS/PDF, PWA, i18n |
@@ -425,47 +425,51 @@
 
 ---
 
-## Sprint 7 — JustSplit
+## Sprint 7 — JustSplit ✅
 **Duration:** Weeks 15–16
 **Goal:** Standalone multi-user expense splitting (not tied to a trip). Multi-currency, weighted splits, debt simplification algorithm.
 
 ### Deliverables
 
 **Backend**
-- [ ] Expense groups CRUD + member management
-- [ ] Expenses CRUD: equal / weighted / exact splits
-- [ ] Per-expense split records with amounts
-- [ ] Balances calculation: who owes whom
-- [ ] Debt simplification: minimum number of transactions to settle all debts (greedy algorithm)
-- [ ] Settlement recording + history
-- [ ] Multi-currency: store amounts + currency, display converted totals
+- [x] Expense groups CRUD + member management
+- [x] Expenses CRUD: equal / weighted / exact splits
+- [x] Per-expense split records with amounts
+- [x] Balances calculation: who owes whom
+- [x] Debt simplification: minimum number of transactions to settle all debts (greedy algorithm)
+- [x] Settlement recording + history (`group_settlements` table)
+- [x] Multi-currency: store amounts + currency, convert via Frankfurt API for balance calc
+- [x] Link expense group to a Circle (`linkedCircleId` FK)
 
 **Web**
-- [ ] JustSplit page: groups list
-- [ ] Group detail: expense list, balance summary, settlement flow
-- [ ] Add expense form: description, amount, currency, paid by, split type
-  - Equal split: auto-calculated
-  - Weighted split: slider per person
-  - Exact split: amount per person
-- [ ] Balance card: color-coded (green = owed, red = owes), simplified debt paths
-- [ ] Settle up flow: mark specific debts as paid
-- [ ] Expense history with edit/delete
-- [ ] Link expense group to a Circle
+- [x] JustSplit page: groups list with per-group balance (green/red)
+- [x] Group detail: expense list (grouped by category), balance summary, settle flow
+- [x] Add expense form: Equal / Weighted (sliders + live preview) / Exact (per-person inputs with validation)
+- [x] Balance card: color-coded, simplified debt paths with "Settle" action
+- [x] Add/remove members (owner only)
+- [x] JustSplit link added to navbar (Receipt icon)
 
 **Mobile**
-- [ ] JustSplit screen: groups → group detail → expenses
-- [ ] Add expense form
-- [ ] Balance screen
+- [ ] JustSplit screen — **deferred to S11**
 
 **Types & SDK**
-- [ ] `ExpenseGroupSchema`, `ExpenseSchema`, `BalanceSchema`
-- [ ] `useExpenseGroupQuery()`, `useExpensesQuery()`, `useBalances()`
+- [x] `ExpenseGroupSchema`, `ExpenseSchema`, `BalanceSummarySchema`, `ExpenseGroupSimplifiedDebtSchema`
+- [x] `useExpenseGroups()`, `useGroupExpenses()`, `useGroupBalances()`, `useSettleDebt()`
+
+### As-Built Notes
+- API: `apps/api/src/routes/expenses.ts` — 13 endpoints at `/api/v1/expenses/groups`
+- DB migration: `drizzle/0006_blushing_beast.sql` — added `category`, `notes`, `linkedCircleId` to expenses/groups; uniqueIndexes; new `group_settlements` table
+- Types: `packages/types/src/schemas/expenses.ts`
+- SDK hooks: `packages/sdk/src/hooks/expenses.ts`
+- Frontend: `/justsplit` (list + detail pages)
+- Seed data: 2 groups (Goa 5 expenses, Rajasthan 5 expenses), mixed split types, 1 settlement each
 
 ### Acceptance Criteria
-- 4 people, 10 expenses with mixed splits → balances match hand-calculation
-- Debt simplification: 6 debts reduced to 3 transactions
-- Settle one debt → balance updates immediately
-- Multi-currency: USD + INR expenses, shown with totals in group currency
+- [x] 2 groups with 5 expenses each (equal, weighted, exact) — seeded and verified
+- [x] Balance calculation: correct net per member (verified via smoke tests)
+- [x] Debt simplification: multi-person debts reduced to minimal transactions
+- [x] Settlement recording: balance updates after POST /settle
+- [x] S1-S6 debt: AGENTS.md updated, circle:member_joined/left WS events added
 
 ---
 

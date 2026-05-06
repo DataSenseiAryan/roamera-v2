@@ -298,9 +298,11 @@ All password: `password123`
 | S2 | Moments & Social | ✅ Done — see `docs/plans/sprint-2-moments-social.md` |
 | S3 | AI Planner + TravelLens | ✅ Done — see `docs/plans/sprint-3-ai-travellens.md` |
 | S4 | Trip Planner Core | ✅ Done — see `docs/plans/sprint-4-trip-planner.md` |
-| S5+ | Budget, Circles, JustSplit... | 🔜 Upcoming |
+| S5 | Budget & Packing | ✅ Done — see `docs/plans/sprint-5-budget-packing.md` |
+| S6 | Circles & Collab | ✅ Done — see `docs/plans/sprint-6-circles-collab.md` |
+| S7 | JustSplit | ✅ Done — see `docs/plans/sprint-7-justsplit.md` |
 
-**Current as-built notes (S1–S4):**
+**Current as-built notes (S1–S6):**
 - **WebSocket**: `WsManager` class in `apps/api/src/lib/ws.ts` — token auth, room subscriptions, broadcast. Wire: `GET /api/v1/auth/ws-token` → connect WS → subscribe to `trip:{id}` room.
 - **Trip Planner**: Full CRUD for trips, days, places, assignments, notes. WS broadcast on every mutation. Maps (Nominatim/Overpass) + weather (Open-Meteo) proxy routes with cache.
 - **Drag-drop**: `@dnd-kit/core` + `@dnd-kit/sortable` for reorder within day + cross-day move.
@@ -312,3 +314,8 @@ All password: `password123`
 - **Demo trips**: "Rajasthan Heritage Tour" (arya_explorer, owner) and "Goa Beach Getaway" (leo_backpacker, owner) seeded with days, places, assignments, and notes.
 - **`docs/plans/`**: Sprint plans are archived here. Read the plan for the sprint you're in before making changes.
 - Amadeus: requires `AMADEUS_CLIENT_ID` + `AMADEUS_CLIENT_SECRET`; gracefully degrades to deep-links only
+- **Budget (S5)**: Per-trip expense tracker at `/api/v1/trips/:tripId/budget`. Multi-currency via Frankfurt API (`apps/api/src/lib/exchange.ts`). Debt simplification (greedy) in `budget.ts`.
+- **Packing (S5)**: Per-trip packing lists at `/api/v1/trips/:tripId/packing`. Bags, categories, templates. Admin packing templates at `/api/v1/admin/packing-templates`.
+- **Circles (S6)**: Travel groups at `/api/v1/circles`. Real-time chat, emoji reactions, polls. WS room `circle:{id}`. Members: join/leave/invite/remove.
+- **Trip Collab (S6)**: In-trip chat + notes + polls at `/api/v1/trips/:tripId/collab`. WS room `trip:{id}`. Notes support pin/unpin.
+- **JustSplit (S7)**: Standalone expense splitting at `/api/v1/expenses`. Multi-currency, equal/weighted/exact splits, greedy debt simplification.

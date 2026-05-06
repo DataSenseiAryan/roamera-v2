@@ -365,6 +365,7 @@ router.post('/:circleId/join', authenticate, async (req: AuthRequest, res, next)
       joinedAt: new Date(),
     });
 
+    getWsManager().broadcast(`circle:${circleId}`, 'circle:member_joined', { circleId, userId });
     res.status(201).json({ success: true });
   } catch (err) {
     next(err);
@@ -384,6 +385,7 @@ router.post('/:circleId/leave', authenticate, async (req: AuthRequest, res, next
       .delete(circleMembers)
       .where(and(eq(circleMembers.circleId, circleId), eq(circleMembers.userId, userId)));
 
+    getWsManager().broadcast(`circle:${circleId}`, 'circle:member_left', { circleId, userId });
     res.json({ success: true });
   } catch (err) {
     next(err);
@@ -425,6 +427,7 @@ router.post('/:circleId/invite', authenticate, requireCircleRole('owner'), async
         role: 'member',
         joinedAt: new Date(),
       });
+      getWsManager().broadcast(`circle:${circleId}`, 'circle:member_joined', { circleId, userId: target.id });
       addedCount += 1;
     }
 
@@ -461,6 +464,7 @@ router.delete(
         .delete(circleMembers)
         .where(and(eq(circleMembers.circleId, circleId), eq(circleMembers.userId, targetUserId)));
 
+      getWsManager().broadcast(`circle:${circleId}`, 'circle:member_left', { circleId, userId: targetUserId });
       res.json({ success: true });
     } catch (err) {
       next(err);
