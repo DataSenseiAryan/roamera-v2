@@ -2,6 +2,7 @@ import crypto from 'crypto';
 
 import type { NextFunction, Request, Response } from 'express';
 import { eq } from 'drizzle-orm';
+import jwt from 'jsonwebtoken';
 
 import { db } from '../db/client';
 import { idempotencyKeys } from '../db/schema';
@@ -19,7 +20,17 @@ export async function idempotencyMiddleware(
     return;
   }
 
-  const userId = req.user?.id ?? 'anonymous';
+  // Extract userId from Bearer token (decode without verify — just for key namespacing)
+  let userId = req.user?.id ?? 'anonymous';
+  if (userId === 'anonymous') {
+    const auth = req.headers.authorization;
+    if (auth?.startsWith('Bearer ')) {
+      try {
+        const decoded = jwt.decode(auth.slice(7)) as { sub?: string } | null;
+        if (decoded?.sub) userId = decoded.sub;
+      } catch { /* ignore */ }
+    }
+  }
 
   try {
     const existing = await db.query.idempotencyKeys.findFirst({

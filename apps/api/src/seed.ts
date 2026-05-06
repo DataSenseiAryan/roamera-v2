@@ -27,6 +27,16 @@ import {
   budgetItems,
   budgetItemMembers,
   settlements,
+  circles,
+  circleMembers,
+  circleMessages,
+  circleMessageReactions,
+  circlePolls,
+  circlePollVotes,
+  collabMessages,
+  collabNotes,
+  collabPolls,
+  collabPollVotes,
 } from './db/schema';
 
 const PASSWORD = 'password123';
@@ -587,6 +597,193 @@ async function seed() {
     } else {
       console.log('  Sprint 5 budget already present — skipping Sprint 5 seed');
     }
+  }
+
+  // ─── Sprint 6: Circles & trip collab ─────────────────────────────
+  const existingCircles = await db.select().from(circles).limit(1);
+  if (existingCircles.length === 0) {
+    const aryaUser = createdUsers.find((u) => u.username === 'arya_explorer');
+    const marcoUser = createdUsers.find((u) => u.username === 'marco_travels');
+    const leoUser = createdUsers.find((u) => u.username === 'leo_backpacker');
+    const anaUser = createdUsers.find((u) => u.username === 'ana_nomad');
+
+    const rajTripRow = await db.query.trips.findFirst({
+      where: (t, { eq: e }) => e(t.title, 'Rajasthan Heritage Tour'),
+    });
+    const goaTripRow = await db.query.trips.findFirst({
+      where: (t, { eq: e }) => e(t.title, 'Goa Beach Getaway'),
+    });
+
+    if (aryaUser && marcoUser && leoUser && anaUser && rajTripRow && goaTripRow) {
+      const circleRajId = crypto.randomUUID();
+      const circleGoaId = crypto.randomUUID();
+
+      await db.insert(circles).values([
+        {
+          id: circleRajId,
+          ownerId: aryaUser.id,
+          title: 'Rajasthan Road Trip Squad',
+          description: 'Planning our epic Rajasthan heritage tour together',
+          destination: 'Rajasthan, India',
+          isPublic: true,
+          linkedTripId: rajTripRow.id,
+        },
+        {
+          id: circleGoaId,
+          ownerId: marcoUser.id,
+          title: 'Goa Beach Gang',
+          description: 'Sun, sand and vibes - planning our Goa adventure',
+          destination: 'Goa, India',
+          isPublic: true,
+          linkedTripId: goaTripRow.id,
+        },
+      ]).onConflictDoNothing();
+
+      await db.insert(circleMembers).values([
+        { circleId: circleRajId, userId: aryaUser.id, role: 'owner' },
+        { circleId: circleRajId, userId: marcoUser.id, role: 'member' },
+        { circleId: circleRajId, userId: leoUser.id, role: 'member' },
+        { circleId: circleGoaId, userId: marcoUser.id, role: 'owner' },
+        { circleId: circleGoaId, userId: aryaUser.id, role: 'member' },
+        { circleId: circleGoaId, userId: anaUser.id, role: 'member' },
+      ]).onConflictDoNothing();
+
+      const rajMsg1 = crypto.randomUUID();
+      const rajMsg2 = crypto.randomUUID();
+      const rajMsg3 = crypto.randomUUID();
+      const rajMsg4 = crypto.randomUUID();
+      const rajMsg5 = crypto.randomUUID();
+
+      await db.insert(circleMessages).values([
+        { id: rajMsg1, circleId: circleRajId, userId: aryaUser.id, content: 'Hey team! Super excited for our Rajasthan trip 🎉' },
+        { id: rajMsg2, circleId: circleRajId, userId: marcoUser.id, content: 'Can\'t wait! The Amber Fort is going to be amazing' },
+        { id: rajMsg3, circleId: circleRajId, userId: leoUser.id, content: 'Should we hire a local guide? I heard it makes a huge difference' },
+        { id: rajMsg4, circleId: circleRajId, userId: aryaUser.id, content: 'Great idea! Let me check reviews' },
+        { id: rajMsg5, circleId: circleRajId, userId: marcoUser.id, content: 'Also, anyone know the best time to visit Hawa Mahal?' },
+      ]).onConflictDoNothing();
+
+      await db.insert(circleMessageReactions).values({
+        messageId: rajMsg1,
+        userId: marcoUser.id,
+        emoji: '👍',
+      }).onConflictDoNothing();
+
+      const rajPollFortId = crypto.randomUUID();
+      const rajPollTransportId = crypto.randomUUID();
+
+      await db.insert(circlePolls).values([
+        {
+          id: rajPollFortId,
+          circleId: circleRajId,
+          userId: aryaUser.id,
+          question: 'Which day should we visit Amber Fort?',
+          optionsJson: ['Day 1 - Monday', 'Day 2 - Tuesday', 'Day 3 - Wednesday'],
+          isMultiple: false,
+          isClosed: false,
+        },
+        {
+          id: rajPollTransportId,
+          circleId: circleRajId,
+          userId: aryaUser.id,
+          question: 'What transport should we use?',
+          optionsJson: ['Auto rickshaw', 'Private cab', 'Public bus'],
+          isMultiple: false,
+          isClosed: true,
+        },
+      ]).onConflictDoNothing();
+
+      await db.insert(circlePollVotes).values([
+        { pollId: rajPollFortId, userId: aryaUser.id, optionIndex: 0 },
+        { pollId: rajPollFortId, userId: marcoUser.id, optionIndex: 1 },
+        { pollId: rajPollTransportId, userId: aryaUser.id, optionIndex: 0 },
+        { pollId: rajPollTransportId, userId: leoUser.id, optionIndex: 1 },
+      ]).onConflictDoNothing();
+
+      const goaMsg1 = crypto.randomUUID();
+      const goaMsg2 = crypto.randomUUID();
+      const goaMsg3 = crypto.randomUUID();
+      const goaMsg4 = crypto.randomUUID();
+
+      await db.insert(circleMessages).values([
+        { id: goaMsg1, circleId: circleGoaId, userId: marcoUser.id, content: 'Welcome to the Goa planning group!' },
+        { id: goaMsg2, circleId: circleGoaId, userId: aryaUser.id, content: 'So excited! Which beaches are on the itinerary?' },
+        { id: goaMsg3, circleId: circleGoaId, userId: anaUser.id, content: 'Palolem and Agonda are must-visits for sunset vibes 🌅' },
+        { id: goaMsg4, circleId: circleGoaId, userId: marcoUser.id, content: 'Perfect! Let\'s also plan a boat trip' },
+      ]).onConflictDoNothing();
+
+      const goaPollArriveId = crypto.randomUUID();
+
+      await db.insert(circlePolls).values({
+        id: goaPollArriveId,
+        circleId: circleGoaId,
+        userId: marcoUser.id,
+        question: 'Best time to arrive in Goa?',
+        optionsJson: ['Friday evening', 'Saturday morning', 'Saturday afternoon'],
+        isMultiple: false,
+        isClosed: false,
+      }).onConflictDoNothing();
+
+      await db.insert(circlePollVotes).values([
+        { pollId: goaPollArriveId, userId: marcoUser.id, optionIndex: 0 },
+        { pollId: goaPollArriveId, userId: aryaUser.id, optionIndex: 0 },
+      ]).onConflictDoNothing();
+
+      await db.insert(collabMessages).values([
+        { id: crypto.randomUUID(), tripId: rajTripRow.id, userId: aryaUser.id, content: 'Let\'s use this chat to coordinate during the trip' },
+        { id: crypto.randomUUID(), tripId: rajTripRow.id, userId: marcoUser.id, content: 'Good idea! I\'ll update here when I reach Jaipur' },
+        { id: crypto.randomUUID(), tripId: rajTripRow.id, userId: leoUser.id, content: 'Don\'t forget to try the local street food at Johri Bazaar!' },
+      ]).onConflictDoNothing();
+
+      const nowNote = new Date();
+
+      await db.insert(collabNotes).values([
+        {
+          id: crypto.randomUUID(),
+          tripId: rajTripRow.id,
+          userId: aryaUser.id,
+          title: 'Important reminders',
+          content: '- Carry cash for smaller shops\n- Avoid tap water\n- Sunscreen is a must!',
+          category: 'Planning',
+          color: '#fef9c3',
+          isPinned: true,
+          updatedAt: nowNote,
+        },
+        {
+          id: crypto.randomUUID(),
+          tripId: rajTripRow.id,
+          userId: marcoUser.id,
+          title: 'Hotel check-in times',
+          content: 'Check-in: 2 PM\nCheck-out: 11 AM\nContact: +91-9876543210',
+          category: 'Accommodation',
+          color: '#dcfce7',
+          isPinned: false,
+          updatedAt: nowNote,
+        },
+      ]).onConflictDoNothing();
+
+      const collabPollOptId = crypto.randomUUID();
+
+      await db.insert(collabPolls).values({
+        id: collabPollOptId,
+        tripId: rajTripRow.id,
+        userId: aryaUser.id,
+        question: 'Which optional activity should we add?',
+        optionsJson: ['Elephant ride at Amer', 'Cooking class', 'Camel safari'],
+        isMultiple: true,
+        isClosed: false,
+      }).onConflictDoNothing();
+
+      await db.insert(collabPollVotes).values([
+        { pollId: collabPollOptId, userId: aryaUser.id, optionIndex: 2 },
+        { pollId: collabPollOptId, userId: marcoUser.id, optionIndex: 2 },
+      ]).onConflictDoNothing();
+
+      console.log('  Seeded Sprint 6 demo (circles + Rajasthan trip collab)');
+    } else {
+      console.log('  Sprint 6 seed skipped (missing demo users or trips)');
+    }
+  } else {
+    console.log('  Circles already seeded — skipping Sprint 6');
   }
 
   console.log('Seed complete!');

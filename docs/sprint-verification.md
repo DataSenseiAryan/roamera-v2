@@ -323,12 +323,12 @@ curl -s $BASE/api/v1/trips/shared/$SHARE | jq '{title: .trip.title, dayCount: (.
 ## Working Demo Guarantee
 
 Every sprint **must** deliver:
-- [ ] `pnpm typecheck` passes with zero errors
-- [ ] `pnpm --filter api db:migrate` completes without errors
-- [ ] `pnpm --filter api db:seed` completes without errors
-- [ ] All new API endpoints return HTTP 200 with expected shape
-- [ ] Web app loads and navigates to all new pages without crashes
-- [ ] All seeded demo data is visible in the UI
+- [x] `pnpm typecheck` passes with zero errors
+- [x] `pnpm --filter api db:migrate` completes without errors
+- [x] `pnpm --filter api db:seed` completes without errors
+- [x] All new API endpoints return HTTP 200 with expected shape
+- [x] Web app loads and navigates to all new pages without crashes
+- [x] All seeded demo data is visible in the UI
 
 ### Sprint 4 Acceptance Criteria
 - [x] Create trip → add 3 days → add 5 places → drag-drop to reorder → see on map
@@ -484,3 +484,127 @@ All passwords: `password123`
 | leo_backpacker | leo@demo.roamera.in |
 | ana_nomad | ana@demo.roamera.in |
 | kenji_wanders | kenji@demo.roamera.in |
+
+---
+
+## Sprint 6 — Travel Circles & Trip Collab
+
+### API Smoke Tests
+
+```bash
+BASE=http://localhost:3000/api/v1
+TOKEN=<your-jwt-token>
+
+# --- Circles ---
+
+# List circles (should show 2 seeded circles)
+curl -s $BASE/circles -H "Authorization: Bearer $TOKEN" | jq '.circles[].title'
+
+# Get circle detail with members
+curl -s $BASE/circles/<circleId> -H "Authorization: Bearer $TOKEN" | jq '{title: .circle.title, members: [.members[].username]}'
+
+# Get circle messages
+curl -s $BASE/circles/<circleId>/messages -H "Authorization: Bearer $TOKEN" | jq '.messages | length'
+
+# Send a message
+curl -s -X POST $BASE/circles/<circleId>/messages \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"content":"Hello from the test!"}' | jq .message.id
+
+# React to a message
+curl -s -X POST $BASE/circles/<circleId>/messages/<messageId>/react \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"emoji":"👍"}' | jq .
+
+# Get polls
+curl -s $BASE/circles/<circleId>/polls -H "Authorization: Bearer $TOKEN" | jq '.polls | length'
+
+# Create a poll
+curl -s -X POST $BASE/circles/<circleId>/polls \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"question":"Best activity?","options":["Hiking","Swimming","Sightseeing"],"isMultiple":false}' | jq .poll.id
+
+# Vote on a poll
+curl -s -X POST $BASE/circles/<circleId>/polls/<pollId>/vote \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"optionIndex":0}' | jq .
+
+# Join a circle
+curl -s -X POST $BASE/circles/<circleId>/join \
+  -H "Authorization: Bearer $TOKEN" | jq .
+
+# --- Trip Collab ---
+
+# Get trip collab messages
+curl -s $BASE/trips/<tripId>/collab/messages -H "Authorization: Bearer $TOKEN" | jq '.messages | length'
+
+# Send a collab message
+curl -s -X POST $BASE/trips/<tripId>/collab/messages \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"content":"Meeting at hotel lobby at 9am!"}' | jq .message.content
+
+# Get notes (should show 2 seeded notes)
+curl -s $BASE/trips/<tripId>/collab/notes -H "Authorization: Bearer $TOKEN" | jq '[.notes[] | {title, isPinned}]'
+
+# Create a note
+curl -s -X POST $BASE/trips/<tripId>/collab/notes \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Day 2 plans","content":"Visit palace in morning","color":"#dbeafe"}' | jq .note.id
+
+# Get collab polls
+curl -s $BASE/trips/<tripId>/collab/polls -H "Authorization: Bearer $TOKEN" | jq '.polls | length'
+```
+
+### Demo Walkthrough (S6)
+
+#### Scene 1: Circles list
+- Login as arya_explorer → click "Circles" in navbar
+- Expected: "Rajasthan Road Trip Squad" (owner) and "Goa Beach Gang" (member) visible
+- Each card shows member count, destination, public badge
+
+#### Scene 2: Circle chat
+- Open "Rajasthan Road Trip Squad"
+- Expected: 5 seeded messages visible in chat with authors
+- First message has 👍 reaction from marco
+
+#### Scene 3: Send message + real-time
+- Type and send a new message
+- Expected: Message appears instantly in chat
+- Open circle in another tab — should also show the new message
+
+#### Scene 4: Create and vote on poll
+- Create circle: "Best hotel for Day 2?" with 3 options
+- Vote on option 1
+- Expected: Vote bar updates to show result
+
+#### Scene 5: Circle members
+- Switch to Members panel
+- Expected: 3 members listed (arya as owner, marco and leo as members)
+- Invite "ana_nomad" → member count increases to 4
+
+#### Scene 6: Trip Collab tab
+- Open "Rajasthan Heritage Tour" → click **Collab** tab
+- Expected: Chat sub-tab shows 3 seeded messages
+- Switch to **Notes** tab: 2 notes visible, "Important reminders" is pinned
+
+#### Scene 7: Create collab note
+- Click "Add Note" → fill title "Day 3 Reminders", content, pick yellow color
+- Expected: Note card appears in the notes grid
+
+#### Scene 8: Trip collab poll
+- Switch to **Polls** tab in Collab
+- Expected: 1 seeded poll "Which optional activity..." with votes visible
+
+### Sprint 6 Acceptance Criteria
+
+- [x] Create circle → invite 2 members → exchange messages in real-time
+- [x] Create poll → vote → results update
+- [x] Link circle to a trip → trip title shows in circle sidebar
+- [x] Trip Collab tab: send messages, create notes, create polls
+- [x] Seeded data visible: 2 circles, messages, polls, trip collab notes

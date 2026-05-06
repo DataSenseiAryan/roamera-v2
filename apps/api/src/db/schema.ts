@@ -575,22 +575,40 @@ export const circles = sqliteTable('circles', {
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(now),
 });
 
-export const circleMembers = sqliteTable('circle_members', {
-  circleId: text('circle_id').notNull().references(() => circles.id, { onDelete: 'cascade' }),
-  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  role: text('role', { enum: ['owner', 'member'] }).notNull().default('member'),
-  joinedAt: integer('joined_at', { mode: 'timestamp' }).notNull().default(now),
-});
+export const circleMembers = sqliteTable(
+  'circle_members',
+  {
+    circleId: text('circle_id').notNull().references(() => circles.id, { onDelete: 'cascade' }),
+    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    role: text('role', { enum: ['owner', 'member'] }).notNull().default('member'),
+    joinedAt: integer('joined_at', { mode: 'timestamp' }).notNull().default(now),
+  },
+  (t) => ({
+    memberUniq: uniqueIndex('circle_member_uniq').on(t.circleId, t.userId),
+  }),
+);
 
 export const circleMessages = sqliteTable('circle_messages', {
   id: text('id').primaryKey(),
   circleId: text('circle_id').notNull().references(() => circles.id, { onDelete: 'cascade' }),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   content: text('content').notNull(),
-  replyToId: text('reply_to_id'),
+  replyToId: text('reply_to_id').references((): ReturnType<typeof text> => circleMessages.id),
   isDeleted: integer('is_deleted', { mode: 'boolean' }).notNull().default(false),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(now),
 });
+
+export const circleMessageReactions = sqliteTable(
+  'circle_message_reactions',
+  {
+    messageId: text('message_id').notNull().references(() => circleMessages.id, { onDelete: 'cascade' }),
+    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    emoji: text('emoji').notNull(),
+  },
+  (t) => ({
+    reactionUniq: uniqueIndex('circle_reaction_uniq').on(t.messageId, t.userId, t.emoji),
+  }),
+);
 
 export const circlePolls = sqliteTable('circle_polls', {
   id: text('id').primaryKey(),
@@ -603,6 +621,81 @@ export const circlePolls = sqliteTable('circle_polls', {
   deadline: integer('deadline', { mode: 'timestamp' }),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(now),
 });
+
+export const circlePollVotes = sqliteTable(
+  'circle_poll_votes',
+  {
+    pollId: text('poll_id').notNull().references(() => circlePolls.id, { onDelete: 'cascade' }),
+    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    optionIndex: integer('option_index').notNull(),
+  },
+  (t) => ({
+    voteUniq: uniqueIndex('circle_poll_vote_uniq').on(t.pollId, t.userId, t.optionIndex),
+  }),
+);
+
+// ═════════════════════════════════════════════════════════════════════════════
+// TRIP COLLAB (Sprint 6)
+// ═════════════════════════════════════════════════════════════════════════════
+
+export const collabMessages = sqliteTable('collab_messages', {
+  id: text('id').primaryKey(),
+  tripId: text('trip_id').notNull().references(() => trips.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  content: text('content').notNull(),
+  replyToId: text('reply_to_id').references((): ReturnType<typeof text> => collabMessages.id),
+  isDeleted: integer('is_deleted', { mode: 'boolean' }).notNull().default(false),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(now),
+});
+
+export const collabMessageReactions = sqliteTable(
+  'collab_message_reactions',
+  {
+    messageId: text('message_id').notNull().references(() => collabMessages.id, { onDelete: 'cascade' }),
+    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    emoji: text('emoji').notNull(),
+  },
+  (t) => ({
+    reactionUniq: uniqueIndex('collab_reaction_uniq').on(t.messageId, t.userId, t.emoji),
+  }),
+);
+
+export const collabNotes = sqliteTable('collab_notes', {
+  id: text('id').primaryKey(),
+  tripId: text('trip_id').notNull().references(() => trips.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  title: text('title').notNull(),
+  content: text('content').notNull().default(''),
+  category: text('category'),
+  color: text('color').default('#ffffff'),
+  isPinned: integer('is_pinned', { mode: 'boolean' }).notNull().default(false),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(now),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(now),
+});
+
+export const collabPolls = sqliteTable('collab_polls', {
+  id: text('id').primaryKey(),
+  tripId: text('trip_id').notNull().references(() => trips.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  question: text('question').notNull(),
+  optionsJson: text('options_json', { mode: 'json' }).$type<string[]>().notNull(),
+  isMultiple: integer('is_multiple', { mode: 'boolean' }).notNull().default(false),
+  isClosed: integer('is_closed', { mode: 'boolean' }).notNull().default(false),
+  deadline: integer('deadline', { mode: 'timestamp' }),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(now),
+});
+
+export const collabPollVotes = sqliteTable(
+  'collab_poll_votes',
+  {
+    pollId: text('poll_id').notNull().references(() => collabPolls.id, { onDelete: 'cascade' }),
+    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    optionIndex: integer('option_index').notNull(),
+  },
+  (t) => ({
+    voteUniq: uniqueIndex('collab_poll_vote_uniq').on(t.pollId, t.userId, t.optionIndex),
+  }),
+);
 
 // ═════════════════════════════════════════════════════════════════════════════
 // JUSTSPLIT (Sprint 7 — skeleton stubs)

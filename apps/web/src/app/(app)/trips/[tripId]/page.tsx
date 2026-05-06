@@ -5,7 +5,7 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import {
   ArrowLeft, Plus, Users, Share2, Download, Loader2, MapPin, Copy, X,
-  Calendar, DollarSign, Package,
+  Calendar, DollarSign, Package, MessageCircle,
 } from 'lucide-react';
 import {
   DndContext,
@@ -43,6 +43,7 @@ import { MembersModal } from '@/components/trips/members-modal';
 import { WeatherWidget } from '@/components/trips/weather-widget';
 import { BudgetPanel } from '@/components/trips/budget/budget-panel';
 import { PackingPanel } from '@/components/trips/packing/packing-panel';
+import { CollabPanel } from '@/components/trips/collab/collab-panel';
 
 // Load Leaflet dynamically (SSR-safe)
 const TripMap = dynamic(() => import('@/components/trips/trip-map'), { ssr: false, loading: () => (
@@ -211,7 +212,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ tripId: s
   const [showMembers, setShowMembers] = useState(false);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [copySuccess, setCopySuccess] = useState(false);
-  const [activeTab, setActiveTab] = useState<'itinerary' | 'budget' | 'packing'>('itinerary');
+  const [activeTab, setActiveTab] = useState<'itinerary' | 'budget' | 'packing' | 'collab'>('itinerary');
 
   const trip = tripData?.trip;
   const canEdit = trip?.myRole === 'owner' || trip?.myRole === 'editor';
@@ -344,6 +345,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ tripId: s
           { id: 'itinerary' as const, label: 'Itinerary', icon: Calendar },
           { id: 'budget' as const, label: 'Budget', icon: DollarSign },
           { id: 'packing' as const, label: 'Packing', icon: Package },
+          { id: 'collab' as const, label: 'Collab', icon: MessageCircle },
         ]).map((tab) => (
           <button
             key={tab.id}
@@ -498,6 +500,12 @@ export default function TripDetailPage({ params }: { params: Promise<{ tripId: s
       {activeTab === 'packing' && (
         <div className="min-h-[calc(100vh-220px)] rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 overflow-hidden overflow-y-auto">
           <PackingPanel tripId={tripId} canEdit={canEdit} myRole={trip.myRole} />
+        </div>
+      )}
+
+      {activeTab === 'collab' && (
+        <div className="h-full min-h-[calc(100vh-220px)] overflow-y-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40">
+          <CollabPanel tripId={tripId} canEdit={canEdit} />
         </div>
       )}
 

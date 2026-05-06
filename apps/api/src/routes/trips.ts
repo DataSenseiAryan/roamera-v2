@@ -17,6 +17,7 @@ import { AppError } from '../middleware/error';
 import { uploadFile, generateStorageKey, getPublicUrl } from '../lib/storage';
 import { getWsManager } from '../lib/ws';
 import budgetRouter from './budget';
+import collabRouter from './collab';
 import packingRouter from './packing';
 
 const router = Router();
@@ -147,6 +148,7 @@ router.post('/', authenticate, async (req: AuthRequest, res, next) => {
 
 router.use('/:tripId/budget', budgetRouter);
 router.use('/:tripId/packing', packingRouter);
+router.use('/:tripId/collab', collabRouter);
 
 // GET /api/v1/trips/:tripId — trip detail
 router.get('/:tripId', authenticate, async (req: AuthRequest, res, next) => {

@@ -219,21 +219,22 @@ hashtags[], itinerary_json
 | `POST` | `/:tripId/packing/templates/apply` | auth (editor) | Apply packing template |
 | `POST` | `/:tripId/packing/templates/save` | auth (editor) | Save list as template |
 
-### 5.10 Collab (Chat, Notes, Polls)
+### 5.10 Collab (Chat, Notes, Polls) ✅ Implemented (S6)
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| `GET`  | `/:tripId/collab/messages` | auth (member) | Chat history (paginated) |
+| `GET`  | `/:tripId/collab/messages` | auth (member) | Chat history (cursor-paginated) |
 | `POST` | `/:tripId/collab/messages` | auth (member) | Send message |
-| `POST` | `/:tripId/collab/messages/:id/react` | auth (member) | Emoji react to message |
-| `DELETE` | `/:tripId/collab/messages/:id` | auth (owner) | Delete message |
-| `GET`  | `/:tripId/collab/notes` | auth (member) | Shared notes |
+| `POST` | `/:tripId/collab/messages/:id/react` | auth (member) | Toggle emoji reaction |
+| `DELETE` | `/:tripId/collab/messages/:id` | auth (owner or author) | Soft-delete message |
+| `GET`  | `/:tripId/collab/notes` | auth (member) | Shared notes (pinned first) |
 | `POST` | `/:tripId/collab/notes` | auth (member) | Create note |
-| `PATCH` | `/:tripId/collab/notes/:id` | auth (member) | Edit note |
-| `DELETE` | `/:tripId/collab/notes/:id` | auth (member) | Delete note |
-| `GET`  | `/:tripId/collab/polls` | auth (member) | Polls list |
+| `PATCH` | `/:tripId/collab/notes/:id` | auth (author or editor) | Edit note |
+| `DELETE` | `/:tripId/collab/notes/:id` | auth (author or owner) | Delete note |
+| `PATCH` | `/:tripId/collab/notes/:id/pin` | auth (editor) | Toggle pin |
+| `GET`  | `/:tripId/collab/polls` | auth (member) | Polls list with vote counts |
 | `POST` | `/:tripId/collab/polls` | auth (member) | Create poll |
-| `POST` | `/:tripId/collab/polls/:id/vote` | auth (member) | Vote on poll |
+| `POST` | `/:tripId/collab/polls/:id/vote` | auth (member) | Vote (single clears prior; multi toggles) |
 | `POST` | `/:tripId/collab/polls/:id/close` | auth (editor) | Close poll |
 
 ### 5.11 Trip Files
@@ -250,25 +251,27 @@ hashtags[], itinerary_json
 
 ---
 
-## 6. Circles (Meetways) — `/api/v1/circles`
+## 6. Circles (Meetways) — `/api/v1/circles` ✅ Implemented (S6)
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| `GET`  | `/` | auth | User's circles (owned + joined) |
+| `GET`  | `/` | auth | User's circles (owned + joined) + public circles |
 | `POST` | `/` | auth | Create circle |
-| `GET`  | `/:circleId` | auth (member) | Circle detail |
+| `GET`  | `/:circleId` | auth | Circle detail + members (public circles viewable by all) |
 | `PATCH` | `/:circleId` | auth (owner) | Update circle |
 | `DELETE` | `/:circleId` | auth (owner) | Delete circle |
 | `POST` | `/:circleId/join` | auth | Join public circle |
-| `POST` | `/:circleId/invite` | auth (owner) | Invite users |
+| `POST` | `/:circleId/leave` | auth (member) | Leave circle |
+| `POST` | `/:circleId/invite` | auth (owner) | Invite users by username |
 | `DELETE` | `/:circleId/members/:userId` | auth (owner) | Remove member |
-| `GET`  | `/:circleId/messages` | auth (member) | Chat history (paginated) |
-| `POST` | `/:circleId/messages` | auth (member) | Send message |
-| `POST` | `/:circleId/messages/:id/react` | auth (member) | React to message |
-| `DELETE` | `/:circleId/messages/:id` | auth (owner) | Delete message |
-| `GET`  | `/:circleId/polls` | auth (member) | Polls |
+| `GET`  | `/:circleId/messages` | auth (member) | Chat history (cursor-paginated) |
+| `POST` | `/:circleId/messages` | auth (member) | Send message (with optional replyToId) |
+| `POST` | `/:circleId/messages/:id/react` | auth (member) | Toggle emoji reaction |
+| `DELETE` | `/:circleId/messages/:id` | auth (owner or author) | Soft-delete message |
+| `GET`  | `/:circleId/polls` | auth (member) | Polls with vote counts + myVotes |
 | `POST` | `/:circleId/polls` | auth (member) | Create poll |
-| `POST` | `/:circleId/polls/:id/vote` | auth (member) | Vote |
+| `POST` | `/:circleId/polls/:id/vote` | auth (member) | Vote (single replaces; multi toggles) |
+| `POST` | `/:circleId/polls/:id/close` | auth (owner) | Close poll |
 
 ---
 
@@ -545,13 +548,23 @@ Connection: `wss://api.roamera.in/ws?token=<ws_token>`
 | `packing:category_updated` | `trip:{id}` | `{ tripId, category }` | Category changed |
 | `packing:bag_updated` | `trip:{id}` | `{ tripId, bag }` | Bag changed |
 | `packing:template_applied` | `trip:{id}` | `{ tripId, templateId }` | Template applied |
-| `collab:message` | `trip:{id}` | `{ tripId, message }` | New chat message |
-| `collab:reaction` | `trip:{id}` | `{ tripId, messageId, reaction }` | Message reaction added |
-| `collab:poll_new` | `trip:{id}` | `{ tripId, poll }` | New poll created |
-| `collab:poll_voted` | `trip:{id}` | `{ tripId, pollId, results }` | Vote recorded |
+| `collab:message` | `trip:{id}` | `{ tripId, message }` | New collab chat message |
+| `collab:reaction` | `trip:{id}` | `{ tripId, messageId, emoji }` | Collab message reaction toggled |
+| `collab:message_deleted` | `trip:{id}` | `{ tripId, messageId }` | Collab message soft-deleted |
+| `collab:note_created` | `trip:{id}` | `{ tripId, note }` | Shared note created |
+| `collab:note_updated` | `trip:{id}` | `{ tripId, note }` | Shared note updated/pinned |
+| `collab:note_deleted` | `trip:{id}` | `{ tripId, noteId }` | Shared note deleted |
+| `collab:poll_new` | `trip:{id}` | `{ tripId, poll }` | Trip collab poll created |
+| `collab:poll_voted` | `trip:{id}` | `{ tripId, pollId }` | Vote recorded on trip poll |
+| `collab:poll_closed` | `trip:{id}` | `{ tripId, pollId }` | Trip poll closed |
 | `circle:message` | `circle:{id}` | `{ circleId, message }` | Circle chat message |
-| `circle:reaction` | `circle:{id}` | `{ circleId, messageId, reaction }` | Circle message reaction |
-| `circle:poll_new` | `circle:{id}` | `{ circleId, poll }` | Circle poll |
+| `circle:reaction` | `circle:{id}` | `{ circleId, messageId, emoji }` | Circle message reaction toggled |
+| `circle:message_deleted` | `circle:{id}` | `{ circleId, messageId }` | Circle message soft-deleted |
+| `circle:poll_new` | `circle:{id}` | `{ circleId, poll }` | Circle poll created |
+| `circle:poll_voted` | `circle:{id}` | `{ circleId, pollId }` | Vote on circle poll |
+| `circle:poll_closed` | `circle:{id}` | `{ circleId, pollId }` | Circle poll closed |
+| `circle:member_joined` | `circle:{id}` | `{ circleId, userId }` | New circle member |
+| `circle:member_left` | `circle:{id}` | `{ circleId, userId }` | Member left/removed |
 | `notification:new` | `user:{id}` | `{ notification }` | New notification |
 | `notification:updated` | `user:{id}` | `{ notificationId, changes }` | Notification updated |
 | `user:online` | `user:{id}` | `{ userId }` | (presence, opt-in) |

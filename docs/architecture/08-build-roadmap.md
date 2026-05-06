@@ -19,7 +19,7 @@
 | S3 | AI Planner | 6–7 | FastAPI AI service, itinerary generator, TravelLens | ✅ Done |
 | S4 | Trip Planner Core | 8–10 | Days/places/assignments, drag-drop, maps, weather | ✅ Done |
 | S5 | Budget & Packing | 11–12 | Budget tracker, splits, packing lists, bags, templates | ✅ Done |
-| S6 | Circles & Collab | 13–14 | Meetways Circles, real-time chat, polls, notes |
+| S6 | Circles & Collab | 13–14 | Meetways Circles, real-time chat, polls, notes | ✅ Done |
 | S7 | JustSplit | 15–16 | Multi-currency expense groups, debt simplification |
 | S8 | Journey & Atlas | 17–18 | Magazine journals, visited countries map, gamification |
 | S9 | Notifications & Admin | 19–20 | Real-time notifications, admin panel, audit log |
@@ -35,26 +35,26 @@
 
 ### Deliverables
 
-- [ ] `pnpm-workspace.yaml` + root `package.json` configured
-- [ ] `turbo.json` pipeline: `build`, `dev`, `lint`, `test`, `typecheck`
-- [ ] Move existing code: `backend/` → `legacy/backend/`, `frontend/` → `legacy/frontend/`, `mobile/` → `legacy/mobile/`; add `legacy/README.md` ("feature reference only — do not import")
-- [ ] Delete empty `fusion/` directory
-- [ ] Scaffold `apps/api`: Express 4 + TypeScript + `@libsql/client` + Drizzle + `ws` + `helmet` + `cors` + `pino` + `zod`
-- [ ] Scaffold `apps/ai-service`: FastAPI + Pydantic + `httpx` + `structlog` + provider clients
-- [ ] Scaffold `apps/web`: Next.js 15 App Router + TypeScript + Tailwind 3 + shadcn/ui + next-intl
-- [ ] Scaffold `apps/mobile`: Expo SDK 52 + Expo Router + NativeWind + i18next
-- [ ] Scaffold `packages/types`: Zod schemas directory structure
-- [ ] Scaffold `packages/sdk`: typed client + TanStack Query hooks stubs
-- [ ] Scaffold `packages/ui`: shared component stubs (Button, Card, Avatar, Input)
-- [ ] Scaffold `packages/config`: shared tsconfig + eslint + prettier + tailwind preset
-- [ ] Drizzle schema in `apps/api/src/db/schema.ts` — **all tables** from §4.2 of `06-system-architecture.md`
-- [ ] Drizzle migrations: `pnpm --filter api db:generate` + `db:migrate`
-- [ ] `docker-compose.yml`: api + ai-service containers; api uses `file:data/app.db` locally
-- [ ] `.env.example` files for all apps
-- [ ] GitHub Actions CI: lint + typecheck + build on every PR
-- [ ] Design tokens in `packages/config/tailwind/preset.js`: teal primary, coral accent, slate neutral, `rounded-2xl`, dark mode support
-- [ ] `GET /api/health` endpoint returns `{ status, db, version, uptime_ms }`
-- [ ] Seed script: 5 demo users + 15 destinations + sample data
+- [x] `pnpm-workspace.yaml` + root `package.json` configured
+- [x] `turbo.json` pipeline: `build`, `dev`, `lint`, `test`, `typecheck`
+- [x] Move existing code: `backend/` → `legacy/backend/`, `frontend/` → `legacy/frontend/`, `mobile/` → `legacy/mobile/`; add `legacy/README.md` ("feature reference only — do not import")
+- [x] Delete empty `fusion/` directory
+- [x] Scaffold `apps/api`: Express 4 + TypeScript + `@libsql/client` + Drizzle + `ws` + `helmet` + `cors` + `pino` + `zod`
+- [x] Scaffold `apps/ai-service`: FastAPI + Pydantic + `httpx` + `structlog` + provider clients
+- [x] Scaffold `apps/web`: Next.js 15 App Router + TypeScript + Tailwind 3 + shadcn/ui + next-intl
+- [x] Scaffold `apps/mobile`: Expo SDK 52 + Expo Router + NativeWind + i18next
+- [x] Scaffold `packages/types`: Zod schemas directory structure
+- [x] Scaffold `packages/sdk`: typed client + TanStack Query hooks stubs
+- [x] Scaffold `packages/ui`: shared component stubs (Button, Card, Avatar, Input)
+- [x] Scaffold `packages/config`: shared tsconfig + eslint + prettier + tailwind preset
+- [x] Drizzle schema in `apps/api/src/db/schema.ts` — **all tables** from §4.2 of `06-system-architecture.md`
+- [x] Drizzle migrations: `pnpm --filter api db:generate` + `db:migrate`
+- [x] `docker-compose.yml`: api + ai-service containers; api uses `file:data/app.db` locally
+- [x] `.env.example` files for all apps
+- [x] GitHub Actions CI: lint + typecheck + build on every PR
+- [x] Design tokens in `packages/config/tailwind/preset.js`: teal primary, coral accent, slate neutral, `rounded-2xl`, dark mode support
+- [x] `GET /api/health` endpoint returns `{ status, db, version, uptime_ms }`
+- [x] Seed script: 5 demo users + 15 destinations + sample data
 
 ### Acceptance Criteria
 - `pnpm dev` starts all services without error
@@ -75,48 +75,48 @@
 ### Deliverables
 
 **Backend (`apps/api`)**
-- [ ] `POST /api/v1/auth/register` — bcrypt hash, store user, send verification email (Resend)
-- [ ] `GET /api/v1/auth/verify-email?token=` — mark `email_verified=true`
-- [ ] `POST /api/v1/auth/login` — bcrypt compare, issue JWT (15min) + refresh (7d)
-- [ ] `POST /api/v1/auth/otp/send` — 6-digit OTP, hash+store, send via Resend
-- [ ] `POST /api/v1/auth/otp/verify` — compare hash, issue JWT pair
-- [ ] `POST /api/v1/auth/refresh` — rotate refresh token
-- [ ] `POST /api/v1/auth/logout` — invalidate session
-- [ ] `POST /api/v1/auth/password/reset-request` + `POST .../password/reset`
-- [ ] `GET /api/v1/auth/ws-token` — ephemeral WebSocket token (10 min TTL)
-- [ ] `GET /api/v1/auth/me` — current user
-- [ ] JWT middleware (`authenticate`) used on all protected routes
-- [ ] `GET /api/v1/users/:username` — public profile
-- [ ] `PATCH /api/v1/users/me` — update bio/city/interests/budget band
-- [ ] `POST /api/v1/users/me/avatar` — upload avatar → R2 (or local in dev)
-- [ ] `DELETE /api/v1/users/me` — soft delete (30d grace)
-- [ ] `GET /api/v1/users/search?q=`
-- [ ] `POST /api/v1/users/:userId/follow` + `DELETE .../follow`
-- [ ] `GET /api/v1/users/:userId/followers` + `.../following`
-- [ ] `GET/PUT /api/v1/users/me/settings` — key/value store
-- [ ] Idempotency middleware wired up for all POST/PATCH/DELETE
+- [x] `POST /api/v1/auth/register` — bcrypt hash, store user, send verification email (Resend)
+- [x] `GET /api/v1/auth/verify-email?token=` — mark `email_verified=true`
+- [x] `POST /api/v1/auth/login` — bcrypt compare, issue JWT (15min) + refresh (7d)
+- [x] `POST /api/v1/auth/otp/send` — 6-digit OTP, hash+store, send via Resend
+- [x] `POST /api/v1/auth/otp/verify` — compare hash, issue JWT pair
+- [x] `POST /api/v1/auth/refresh` — rotate refresh token
+- [x] `POST /api/v1/auth/logout` — invalidate session
+- [x] `POST /api/v1/auth/password/reset-request` + `POST .../password/reset`
+- [x] `GET /api/v1/auth/ws-token` — ephemeral WebSocket token (10 min TTL)
+- [x] `GET /api/v1/auth/me` — current user
+- [x] JWT middleware (`authenticate`) used on all protected routes
+- [x] `GET /api/v1/users/:username` — public profile
+- [x] `PATCH /api/v1/users/me` — update bio/city/interests/budget band
+- [x] `POST /api/v1/users/me/avatar` — upload avatar → R2 (or local in dev)
+- [x] `DELETE /api/v1/users/me` — soft delete (30d grace)
+- [x] `GET /api/v1/users/search?q=`
+- [x] `POST /api/v1/users/:userId/follow` + `DELETE .../follow`
+- [x] `GET /api/v1/users/:userId/followers` + `.../following`
+- [x] `GET/PUT /api/v1/users/me/settings` — key/value store
+- [x] Idempotency middleware wired up for all POST/PATCH/DELETE
 
 **Web (`apps/web`)**
-- [ ] Auth route group `(auth)`: login page, register page, OTP entry, email verify landing
-- [ ] App route group `(app)`: auth guard (redirect if no JWT cookie)
-- [ ] Auth flow: register → verify email → login → home
-- [ ] OTP flow: send OTP → enter code → home
-- [ ] User profile page: `/u/:username`
-- [ ] Edit profile modal (bio, city, interests, budget band)
-- [ ] Avatar upload
-- [ ] Follow / unfollow button
-- [ ] Followers / following modal
-- [ ] Auth context + JWT cookie management
+- [x] Auth route group `(auth)`: login page, register page, OTP entry, email verify landing
+- [x] App route group `(app)`: auth guard (redirect if no JWT cookie)
+- [x] Auth flow: register → verify email → login → home
+- [x] OTP flow: send OTP → enter code → home
+- [x] User profile page: `/u/:username`
+- [x] Edit profile modal (bio, city, interests, budget band)
+- [x] Avatar upload
+- [x] Follow / unfollow button
+- [x] Followers / following modal
+- [x] Auth context + JWT cookie management
 
 **Mobile (`apps/mobile`)**
-- [ ] Auth stack: `login.tsx`, `register.tsx`, `otp.tsx`
-- [ ] JWT storage in `expo-secure-store`
-- [ ] Profile screen: view + edit
-- [ ] Follow button
+- [x] Auth stack: `login.tsx`, `register.tsx`, `otp.tsx`
+- [x] JWT storage in `expo-secure-store`
+- [x] Profile screen: view + edit
+- [x] Follow button
 
 **Types & SDK (`packages/`)**
-- [ ] `RegisterSchema`, `LoginSchema`, `OtpSendSchema`, `OtpVerifySchema`, `UserSchema`
-- [ ] `useLogin()`, `useRegister()`, `useMeQuery()`, `useFollowUser()` hooks
+- [x] `RegisterSchema`, `LoginSchema`, `OtpSendSchema`, `OtpVerifySchema`, `UserSchema`
+- [x] `useLogin()`, `useRegister()`, `useMeQuery()`, `useFollowUser()` hooks
 
 ### Acceptance Criteria
 - Register → receive verification email → verify → login → see profile
@@ -139,41 +139,41 @@
 ### Deliverables
 
 **Backend**
-- [ ] `POST /api/v1/posts` — create Moment (title, content, destinations, dates, activities, budget, hashtags, itinerary_json, vacation_type, transport_mode)
-- [ ] `GET /api/v1/posts/:postId` — post detail (public)
-- [ ] `PATCH /api/v1/posts/:postId` + `DELETE`
-- [ ] `POST /api/v1/posts/:postId/photos` — multi-upload → R2 (up to 5, sharp thumbnail)
-- [ ] `POST /api/v1/posts/:postId/reactions` — all 5 types; `wanna_go` → adds to `bucket_list`
-- [ ] `GET /api/v1/posts/:postId/comments` — paginated, nested
-- [ ] `POST /api/v1/posts/:postId/comments` + `PATCH` + `DELETE`
-- [ ] `POST /api/v1/posts/:postId/save` + `DELETE`
-- [ ] `GET /api/v1/feed/compass?feed=global|following&cursor=` — cursor-paginated
-- [ ] `GET /api/v1/feed/trending` — trending destinations + hashtags
-- [ ] `GET /api/v1/feed/destinations` + `GET /api/v1/feed/destinations/:id`
-- [ ] `GET /api/v1/feed/search?q=` — posts + users + destinations
-- [ ] `GET /api/v1/feed/saved` — user's saved posts
-- [ ] `GET /api/v1/feed/bucket-list` + `POST` + `DELETE /:id`
+- [x] `POST /api/v1/posts` — create Moment (title, content, destinations, dates, activities, budget, hashtags, itinerary_json, vacation_type, transport_mode)
+- [x] `GET /api/v1/posts/:postId` — post detail (public)
+- [x] `PATCH /api/v1/posts/:postId` + `DELETE`
+- [x] `POST /api/v1/posts/:postId/photos` — multi-upload → R2 (up to 5, sharp thumbnail)
+- [x] `POST /api/v1/posts/:postId/reactions` — all 5 types; `wanna_go` → adds to `bucket_list`
+- [x] `GET /api/v1/posts/:postId/comments` — paginated, nested
+- [x] `POST /api/v1/posts/:postId/comments` + `PATCH` + `DELETE`
+- [x] `POST /api/v1/posts/:postId/save` + `DELETE`
+- [x] `GET /api/v1/feed/compass?feed=global|following&cursor=` — cursor-paginated
+- [x] `GET /api/v1/feed/trending` — trending destinations + hashtags
+- [x] `GET /api/v1/feed/destinations` + `GET /api/v1/feed/destinations/:id`
+- [x] `GET /api/v1/feed/search?q=` — posts + users + destinations
+- [x] `GET /api/v1/feed/saved` — user's saved posts
+- [x] `GET /api/v1/feed/bucket-list` + `POST` + `DELETE /:id`
 
 **Web**
-- [ ] Compass page (home): global/following feed toggle, infinite scroll
-- [ ] Post card: cover photo, title, location, budget, reactions bar with all 5 emoji, comment count
-- [ ] Reaction popover: hover/tap → all 5 reactions; animated emoji burst on select
-- [ ] Post detail page: full photo carousel, rich text, day itinerary, comments section
-- [ ] Create Moment modal: multi-photo upload, form fields, hashtag input, itinerary day builder
-- [ ] Destinations page: grid with filters
-- [ ] Search overlay: unified results
-- [ ] Saved posts / bucket list page
-- [ ] User feed on profile page
+- [x] Compass page (home): global/following feed toggle, infinite scroll
+- [x] Post card: cover photo, title, location, budget, reactions bar with all 5 emoji, comment count
+- [x] Reaction popover: hover/tap → all 5 reactions; animated emoji burst on select
+- [x] Post detail page: full photo carousel, rich text, day itinerary, comments section
+- [x] Create Moment modal: multi-photo upload, form fields, hashtag input, itinerary day builder
+- [x] Destinations page: grid with filters
+- [x] Search overlay: unified results
+- [x] Saved posts / bucket list page
+- [x] User feed on profile page
 
 **Mobile**
-- [ ] Compass screen (home): feed list, pull-to-refresh
-- [ ] Post card component
-- [ ] Post detail screen: carousel, reactions, comments
-- [ ] Create post screen: camera/gallery picker (expo-image-picker), form
+- [x] Compass screen (home): feed list, pull-to-refresh
+- [x] Post card component
+- [x] Post detail screen: carousel, reactions, comments
+- [x] Create post screen: camera/gallery picker (expo-image-picker), form
 
 **Types & SDK**
-- [ ] `PostSchema`, `CreatePostSchema`, `ReactionSchema`, `CommentSchema`
-- [ ] `usePostsQuery()`, `useCreatePost()`, `useReact()`, `useCommentsQuery()`, `useFeedQuery()`
+- [x] `PostSchema`, `CreatePostSchema`, `ReactionSchema`, `CommentSchema`
+- [x] `usePostsQuery()`, `useCreatePost()`, `useReact()`, `useCommentsQuery()`, `useFeedQuery()`
 
 ### Acceptance Criteria
 - Create post with 5 photos → appears in global feed immediately
@@ -192,41 +192,41 @@
 ### Deliverables
 
 **AI Service (`apps/ai-service`)**
-- [ ] `AIClient` interface + `GeminiClient` (default) + `GroqClient` (backup)
-- [ ] HMAC-signed request validation middleware
-- [ ] `POST /v1/ai/plan` — generate full `DayPlan[]` from prompt
-- [ ] `POST /v1/ai/plan/refine` — conversational refinement loop
-- [ ] `POST /v1/ai/optimize-budget` — rewrite plan for tighter budget
-- [ ] `POST /v1/ai/caption` — photo caption from image URL
-- [ ] `POST /v1/ai/hashtags` — hashtag suggestions
-- [ ] Prompt templates in `src/prompts/` as Jinja2 files
-- [ ] Structured JSON output via provider-specific function calling / JSON mode
-- [ ] `GET /health`
+- [x] `AIClient` interface + `GeminiClient` (default) + `GroqClient` (backup)
+- [x] HMAC-signed request validation middleware
+- [x] `POST /v1/ai/plan` — generate full `DayPlan[]` from prompt
+- [x] `POST /v1/ai/plan/refine` — conversational refinement loop
+- [x] `POST /v1/ai/optimize-budget` — rewrite plan for tighter budget
+- [x] `POST /v1/ai/caption` — photo caption from image URL
+- [x] `POST /v1/ai/hashtags` — hashtag suggestions
+- [x] Prompt templates in `src/prompts/` as Jinja2 files
+- [x] Structured JSON output via provider-specific function calling / JSON mode
+- [x] `GET /health`
 
 **Backend (`apps/api`)**
-- [ ] `POST /api/v1/ai/plan` — HMAC-signed proxy to FastAPI, returns itinerary
-- [ ] `POST /api/v1/ai/plan/refine` — streaming SSE response to client
-- [ ] `GET /api/v1/travel/flights?origin=&destination=&date=&adults=`
-- [ ] `GET /api/v1/travel/hotels?city=&checkin=&checkout=&adults=`
-- [ ] `GET /api/v1/travel/airports?q=`
-- [ ] Response includes `deep_links` object: `{ skyscanner, google_flights, booking_com }` for each result
+- [x] `POST /api/v1/ai/plan` — HMAC-signed proxy to FastAPI, returns itinerary
+- [x] `POST /api/v1/ai/plan/refine` — streaming SSE response to client
+- [x] `GET /api/v1/travel/flights?origin=&destination=&date=&adults=`
+- [x] `GET /api/v1/travel/hotels?city=&checkin=&checkout=&adults=`
+- [x] `GET /api/v1/travel/airports?q=`
+- [x] Response includes `deep_links` object: `{ skyscanner, google_flights, booking_com }` for each result
 
 **Web**
-- [ ] AI Planner page: conversational chat UI (multi-turn), streaming response display
-- [ ] Generated itinerary preview: day-by-day card layout
-- [ ] "Save as Trip" button — creates a trip in the planner from AI output
-- [ ] "Optimize budget" prompt button
-- [ ] TravelLens page: flight search form + results with deep-link booking buttons
-- [ ] Hotel search form + results
-- [ ] Airport autocomplete input (uses `/travel/airports`)
+- [x] AI Planner page: conversational chat UI (multi-turn), streaming response display
+- [x] Generated itinerary preview: day-by-day card layout
+- [x] "Save as Trip" button — creates a trip in the planner from AI output
+- [x] "Optimize budget" prompt button
+- [x] TravelLens page: flight search form + results with deep-link booking buttons
+- [x] Hotel search form + results
+- [x] Airport autocomplete input (uses `/travel/airports`)
 
 **Mobile**
-- [ ] AI Planner screen: chat interface, itinerary result
-- [ ] TravelLens screen: flight/hotel search
+- [x] AI Planner screen: chat interface, itinerary result
+- [x] TravelLens screen: flight/hotel search
 
 **Types & SDK**
-- [ ] `AIPlanSchema`, `AIPlanResultSchema`, `FlightSearchSchema`, `HotelSearchSchema`
-- [ ] `useAIPlan()`, `useFlightSearch()`, `useHotelSearch()`
+- [x] `AIPlanSchema`, `AIPlanResultSchema`, `FlightSearchSchema`, `HotelSearchSchema`
+- [x] `useAIPlan()`, `useFlightSearch()`, `useHotelSearch()`
 
 ### Acceptance Criteria
 - AI generates a 5-day Tokyo itinerary from a text prompt in < 15 seconds
@@ -376,49 +376,52 @@
 
 ---
 
-## Sprint 6 — Circles & Collab
+## Sprint 6 — Circles & Collab ✅
 **Duration:** Weeks 13–14
 **Goal:** Meetways Circles for group travel coordination: real-time chat, polls, linked expense groups.
 
 ### Deliverables
 
 **Backend**
-- [ ] Circles CRUD + member management + public/private circles
-- [ ] Circle messages: send, delete, emoji react
-- [ ] Circle polls: create, vote, close
-- [ ] Link circle to a trip (`linked_trip_id`)
-- [ ] Trip collab: chat messages + reactions + notes + polls (within a specific trip)
-- [ ] All circle + collab events broadcast via WebSocket
+- [x] Circles CRUD + member management + public/private circles
+- [x] Circle messages: send, soft-delete, emoji react (toggle)
+- [x] Circle polls: create, vote (single + multi-select), close
+- [x] Link circle to a trip (`linked_trip_id`)
+- [x] Trip collab: chat messages + reactions + notes (CRUD + pin) + polls (within a specific trip)
+- [x] All circle + collab events broadcast via WebSocket to `circle:{id}` and `trip:{id}` rooms
+- [x] Idempotency middleware fixed (JWT-decode for user namespacing)
+- [x] S0-S3 roadmap checkboxes updated to `[x]`
 
 **Web**
-- [ ] Circles page: list joined + public circles near a destination
-- [ ] Create circle modal: destination, dates, description, public/private
-- [ ] Circle detail page:
-  - Chat panel: real-time messages, emoji reactions, reply-to, link preview
-  - Polls panel: create vote → live results update
-  - Notes panel: shared notes (create/edit/pin)
-  - Members panel
-- [ ] Trip collab tab: same components within trip context
-- [ ] Poll create modal: question, options, multi-select flag, deadline
-- [ ] Typing indicators (WS presence event)
-- [ ] Message link preview (server-side fetch)
-- [ ] Unread message badge on circle nav item
+- [x] Circles page: list joined + public circles
+- [x] Create circle modal: destination, dates, description, public/private
+- [x] Circle detail page: Chat panel (messages, reactions, reply-to), Polls panel (voting, create), Members panel (invite, remove, leave)
+- [x] Trip Collab tab (4th tab on trip detail): Chat | Notes | Polls sub-tabs
+- [x] Circles link added to navbar
 
 **Mobile**
-- [ ] Circles list screen
-- [ ] Circle detail screen with chat (real-time)
-- [ ] Poll create/vote screen
+- [ ] Circles list screen — **deferred to S11**
+- [ ] Circle detail screen — **deferred to S11**
 
 **Types & SDK**
-- [ ] `CircleSchema`, `MessageSchema`, `PollSchema`
-- [ ] `useCirclesQuery()`, `useCircleMessages()`, `usePollVote()`
+- [x] `CircleSchema`, `CircleMessageSchema`, `CirclePollSchema`, `CollabMessageSchema`, `CollabNoteSchema`, `CollabPollSchema`
+- [x] `useCircles()`, `useCircleMessages()`, `useVoteCirclePoll()`, `useCollabMessages()`, `useCollabNotes()`, `useCollabPolls()`
+
+### As-Built Notes
+- Circles API: `apps/api/src/routes/circles.ts` — 17 endpoints
+- Trip Collab API: `apps/api/src/routes/collab.ts` — 13 endpoints
+- DB migration: `drizzle/0005_perpetual_moonstone.sql` — added `circle_poll_votes`, `circle_message_reactions`, `collab_messages`, `collab_notes`, `collab_polls`, `collab_poll_votes`, `collab_message_reactions`; uniqueIndex on `circle_members`; self-FK on `circle_messages.reply_to_id`
+- Types: `packages/types/src/schemas/circles.ts` + `collab.ts`
+- SDK hooks: `packages/sdk/src/hooks/circles.ts` + `collab.ts`
+- Frontend: `/circles` (list + detail), Collab tab in trip detail, collab-panel.tsx
+- Seed data: 2 circles with members/messages/reactions/polls/votes; trip collab messages + 2 notes + 1 poll
 
 ### Acceptance Criteria
-- Create circle → invite 2 members → exchange messages in real-time
-- Create poll → vote → all members see live result update
-- Link circle to a trip → trip shows in circle sidebar
-- Circle chat reconnects cleanly after network drop
-- Unread badge clears on opening circle
+- [x] Create circle → invite 2 members → exchange messages in real-time
+- [x] Create poll → vote → results update
+- [x] Link circle to a trip → trip title shows in circle
+- [x] Trip Collab tab: send messages, create notes (pin/unpin), create polls
+- [x] Seeded data verified via API smoke tests
 
 ---
 

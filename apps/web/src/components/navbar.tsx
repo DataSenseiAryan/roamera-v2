@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { LogOut, User, Settings, Compass, MapPin, Bookmark, Search, Sparkles, Globe, Map } from 'lucide-react';
+import { LogOut, User, Settings, Compass, MapPin, Bookmark, Search, Sparkles, Globe, Map, Users } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth-store';
 import { getApiClient } from '@roamera/sdk';
 
@@ -47,6 +47,13 @@ export function Navbar() {
             title="My Trips"
           >
             <Map className="h-5 w-5" />
+          </Link>
+          <Link
+            href="/circles"
+            className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+            title="Circles"
+          >
+            <Users className="h-5 w-5" />
           </Link>
           <Link
             href="/saved"
