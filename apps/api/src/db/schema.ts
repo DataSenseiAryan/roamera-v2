@@ -155,60 +155,114 @@ export const idempotencyKeys = sqliteTable(
 );
 
 // ═════════════════════════════════════════════════════════════════════════════
-// SOCIAL (Sprint 2 — skeleton stubs)
+// SOCIAL (Sprint 2)
 // ═════════════════════════════════════════════════════════════════════════════
 
-export const posts = sqliteTable('posts', {
-  id: text('id').primaryKey(),
-  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  title: text('title').notNull(),
-  content: text('content'),
-  isPublished: integer('is_published', { mode: 'boolean' }).notNull().default(true),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(now),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(now),
-});
+export const posts = sqliteTable(
+  'posts',
+  {
+    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    title: text('title').notNull(),
+    content: text('content'),
+    destinations: text('destinations', { mode: 'json' }).$type<Array<{ name: string; lat?: string; lng?: string; country?: string }>>().notNull().default([]),
+    dateFrom: integer('date_from', { mode: 'timestamp' }),
+    dateTo: integer('date_to', { mode: 'timestamp' }),
+    activities: text('activities', { mode: 'json' }).$type<string[]>().notNull().default([]),
+    accommodation: text('accommodation'),
+    budgetInr: integer('budget_inr'),
+    vacationType: text('vacation_type', { enum: ['leisure', 'adventure', 'workation', 'cultural', 'religious', 'wildlife'] }),
+    transportMode: text('transport_mode', { enum: ['flight', 'train', 'road_trip', 'bus', 'cruise', 'backpack'] }),
+    hashtags: text('hashtags', { mode: 'json' }).$type<string[]>().notNull().default([]),
+    itineraryJson: text('itinerary_json', { mode: 'json' }),
+    coverKey: text('cover_key'),
+    likesCount: integer('likes_count').notNull().default(0),
+    commentsCount: integer('comments_count').notNull().default(0),
+    isPublished: integer('is_published', { mode: 'boolean' }).notNull().default(true),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(now),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(now),
+  },
+  (t) => ({
+    userIdx: index('posts_user_idx').on(t.userId),
+    createdIdx: index('posts_created_idx').on(t.createdAt),
+    publishedIdx: index('posts_published_idx').on(t.isPublished),
+  }),
+);
 
-export const postPhotos = sqliteTable('post_photos', {
-  id: text('id').primaryKey(),
-  postId: text('post_id').notNull().references(() => posts.id, { onDelete: 'cascade' }),
-  storageKey: text('storage_key').notNull(),
-  orderIndex: integer('order_index').notNull().default(0),
-  caption: text('caption'),
-});
+export const postPhotos = sqliteTable(
+  'post_photos',
+  {
+    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    postId: text('post_id').notNull().references(() => posts.id, { onDelete: 'cascade' }),
+    storageKey: text('storage_key').notNull(),
+    orderIndex: integer('order_index').notNull().default(0),
+    caption: text('caption'),
+  },
+  (t) => ({
+    postIdx: index('post_photos_post_idx').on(t.postId),
+  }),
+);
 
-export const reactions = sqliteTable('reactions', {
-  id: text('id').primaryKey(),
-  postId: text('post_id').notNull().references(() => posts.id, { onDelete: 'cascade' }),
-  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  type: text('type', { enum: ['love', 'epic', 'wander', 'wanna_go', 'amazing'] }).notNull(),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(now),
-});
+export const reactions = sqliteTable(
+  'reactions',
+  {
+    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    postId: text('post_id').notNull().references(() => posts.id, { onDelete: 'cascade' }),
+    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    type: text('type', { enum: ['love', 'epic', 'wander', 'wanna_go', 'amazing'] }).notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(now),
+  },
+  (t) => ({
+    postUserIdx: uniqueIndex('reactions_post_user_idx').on(t.postId, t.userId),
+    postIdx: index('reactions_post_idx').on(t.postId),
+  }),
+);
 
-export const comments = sqliteTable('comments', {
-  id: text('id').primaryKey(),
-  postId: text('post_id').notNull().references(() => posts.id, { onDelete: 'cascade' }),
-  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  parentId: text('parent_id'),
-  content: text('content').notNull(),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(now),
-});
+export const comments = sqliteTable(
+  'comments',
+  {
+    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    postId: text('post_id').notNull().references(() => posts.id, { onDelete: 'cascade' }),
+    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    parentId: text('parent_id'),
+    content: text('content').notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(now),
+  },
+  (t) => ({
+    postIdx: index('comments_post_idx').on(t.postId),
+    parentIdx: index('comments_parent_idx').on(t.parentId),
+  }),
+);
 
-export const bucketList = sqliteTable('bucket_list', {
-  id: text('id').primaryKey(),
-  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  placeName: text('place_name').notNull(),
-  lat: text('lat'),
-  lng: text('lng'),
-  country: text('country'),
-  note: text('note'),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(now),
-});
+export const bucketList = sqliteTable(
+  'bucket_list',
+  {
+    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    placeName: text('place_name').notNull(),
+    lat: text('lat'),
+    lng: text('lng'),
+    country: text('country'),
+    note: text('note'),
+    postId: text('post_id').references(() => posts.id, { onDelete: 'set null' }),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(now),
+  },
+  (t) => ({
+    userIdx: index('bucket_list_user_idx').on(t.userId),
+  }),
+);
 
-export const savedPosts = sqliteTable('saved_posts', {
-  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  postId: text('post_id').notNull().references(() => posts.id, { onDelete: 'cascade' }),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(now),
-});
+export const savedPosts = sqliteTable(
+  'saved_posts',
+  {
+    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    postId: text('post_id').notNull().references(() => posts.id, { onDelete: 'cascade' }),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(now),
+  },
+  (t) => ({
+    pk: uniqueIndex('saved_posts_pk').on(t.userId, t.postId),
+  }),
+);
 
 // ═════════════════════════════════════════════════════════════════════════════
 // NOTIFICATIONS (Sprint 9 — skeleton stub)

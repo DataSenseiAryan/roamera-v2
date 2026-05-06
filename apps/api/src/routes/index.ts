@@ -5,6 +5,8 @@ import path from 'path';
 import healthRouter from './health';
 import authRouter from './auth';
 import usersRouter from './users';
+import postsRouter from './posts';
+import feedRouter from './feed';
 
 const router = Router();
 
@@ -17,12 +19,12 @@ router.use('/api/v1/auth', authRouter);
 // Sprint 1: User routes
 router.use('/api/v1/users', usersRouter);
 
+// Sprint 2: Posts & Social
+router.use('/api/v1/posts', postsRouter);
+router.use('/api/v1/feed', feedRouter);
+
 // Serve local uploads in development
 router.use('/uploads', express.static(path.resolve(process.cwd(), 'data/uploads')));
-
-// Sprint 2: Posts / feed (added in S2)
-// router.use('/api/v1/posts', postsRouter);
-// router.use('/api/v1/feed', feedRouter);
 
 // Sprint 3: AI / Travel (added in S3)
 // router.use('/api/v1/ai', aiRouter);

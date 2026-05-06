@@ -1,8 +1,9 @@
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
+import { eq } from 'drizzle-orm';
 
 import { db } from './db/client';
-import { users, destinations, follows, userSettings } from './db/schema';
+import { users, destinations, follows, userSettings, posts, reactions, comments } from './db/schema';
 
 const PASSWORD = 'password123';
 
@@ -147,6 +148,153 @@ async function seed() {
       value: 'en',
     }).onConflictDoNothing();
     console.log('  Created user settings for arya_explorer');
+  }
+
+  // Seed demo posts (2 per user)
+  if (createdUsers.length >= 5) {
+    const demoPosts = [
+      {
+        userIdx: 0, title: '3 Days in Manali',
+        content: 'Perfect winter escape to the mountains. The snow-capped peaks and cozy cafes made it unforgettable.',
+        destinations: [{ name: 'Manali', country: 'India', lat: '32.2396', lng: '77.1887' }],
+        activities: ['trekking', 'skiing', 'cafe-hopping'],
+        budgetInr: 15000, vacationType: 'adventure' as const, transportMode: 'bus' as const,
+        hashtags: ['manali', 'mountains', 'winter', 'himachal'],
+      },
+      {
+        userIdx: 0, title: 'Sunrise at Triund',
+        content: 'Hiked up at 3 AM to catch the golden sunrise above the clouds. Worth every step.',
+        destinations: [{ name: 'Dharamshala', country: 'India', lat: '32.2190', lng: '76.3234' }],
+        activities: ['trekking', 'photography', 'camping'],
+        budgetInr: 5000, vacationType: 'adventure' as const, transportMode: 'backpack' as const,
+        hashtags: ['triund', 'trek', 'sunrise', 'hiking'],
+      },
+      {
+        userIdx: 1, title: 'Street Food Tour in Delhi',
+        content: 'From Chandni Chowk parathas to Connaught Place momos — a day of pure food indulgence.',
+        destinations: [{ name: 'New Delhi', country: 'India', lat: '28.6139', lng: '77.2090' }],
+        activities: ['food', 'walking-tour', 'photography'],
+        budgetInr: 2000, vacationType: 'cultural' as const, transportMode: 'bus' as const,
+        hashtags: ['delhi', 'streetfood', 'foodie', 'india'],
+      },
+      {
+        userIdx: 1, title: 'Backpacking Through Rajasthan',
+        content: 'Two weeks across Jaipur, Udaipur, and Jaisalmer. The colors, forts, and desert sunsets were magical.',
+        destinations: [{ name: 'Jaipur', country: 'India', lat: '26.9124', lng: '75.7873' }],
+        activities: ['sightseeing', 'photography', 'cultural'],
+        budgetInr: 25000, vacationType: 'cultural' as const, transportMode: 'train' as const,
+        hashtags: ['rajasthan', 'backpacking', 'forts', 'desert'],
+      },
+      {
+        userIdx: 2, title: 'Bali Beach Vibes',
+        content: 'Surfing at Kuta, temple visits in Ubud, and the most stunning rice terraces.',
+        destinations: [{ name: 'Bali', country: 'Indonesia', lat: '-8.3405', lng: '115.0920' }],
+        activities: ['surfing', 'temples', 'beaches'],
+        budgetInr: 45000, vacationType: 'leisure' as const, transportMode: 'flight' as const,
+        hashtags: ['bali', 'beach', 'surf', 'indonesia'],
+      },
+      {
+        userIdx: 2, title: 'Goa on a Budget',
+        content: 'South Goa beaches, local shacks, and scooter rides through palm-lined roads.',
+        destinations: [{ name: 'Goa', country: 'India', lat: '15.2993', lng: '74.1240' }],
+        activities: ['beaches', 'nightlife', 'scooter'],
+        budgetInr: 8000, vacationType: 'leisure' as const, transportMode: 'train' as const,
+        hashtags: ['goa', 'beach', 'budget', 'southgoa'],
+      },
+      {
+        userIdx: 3, title: 'Workation in Rishikesh',
+        content: 'Working from a riverside cafe with views of the Ganges. Perfect blend of work and yoga.',
+        destinations: [{ name: 'Rishikesh', country: 'India', lat: '30.0869', lng: '78.2676' }],
+        activities: ['yoga', 'workation', 'rafting'],
+        budgetInr: 12000, vacationType: 'workation' as const, transportMode: 'bus' as const,
+        hashtags: ['rishikesh', 'workation', 'yoga', 'digitalnomad'],
+      },
+      {
+        userIdx: 3, title: 'Cafe Hopping in Barcelona',
+        content: 'Found the best coworking cafes while exploring Gaudí architecture and Gothic Quarter.',
+        destinations: [{ name: 'Barcelona', country: 'Spain' }],
+        activities: ['cafes', 'architecture', 'walking'],
+        budgetInr: 60000, vacationType: 'workation' as const, transportMode: 'flight' as const,
+        hashtags: ['barcelona', 'cafes', 'gaudi', 'spain'],
+      },
+      {
+        userIdx: 4, title: 'Wildlife Safari in Ranthambore',
+        content: 'Spotted a tiger on the third safari! The golden hour light made for incredible shots.',
+        destinations: [{ name: 'Ranthambore', country: 'India', lat: '26.0173', lng: '76.5026' }],
+        activities: ['wildlife', 'photography', 'safari'],
+        budgetInr: 20000, vacationType: 'wildlife' as const, transportMode: 'train' as const,
+        hashtags: ['ranthambore', 'tiger', 'wildlife', 'safari'],
+      },
+      {
+        userIdx: 4, title: 'Cherry Blossoms in Kyoto',
+        content: 'Visited 8 temples in bloom season. The Philosopher\'s Path was a dream in pink.',
+        destinations: [{ name: 'Kyoto', country: 'Japan', lat: '35.0116', lng: '135.7681' }],
+        activities: ['photography', 'temples', 'gardens'],
+        budgetInr: 80000, vacationType: 'cultural' as const, transportMode: 'flight' as const,
+        hashtags: ['kyoto', 'cherryblossoms', 'japan', 'temples'],
+      },
+    ];
+
+    for (const dp of demoPosts) {
+      const postId = crypto.randomUUID();
+      await db.insert(posts).values({
+        id: postId,
+        userId: createdUsers[dp.userIdx].id,
+        title: dp.title,
+        content: dp.content,
+        destinations: dp.destinations,
+        activities: dp.activities,
+        budgetInr: dp.budgetInr,
+        vacationType: dp.vacationType,
+        transportMode: dp.transportMode,
+        hashtags: dp.hashtags,
+      }).onConflictDoNothing();
+    }
+    console.log(`  Created ${demoPosts.length} demo posts`);
+
+    // Add some reactions
+    const allPosts = await db.select().from(posts).limit(10);
+    const reactionTypes = ['love', 'epic', 'wander', 'wanna_go', 'amazing'] as const;
+    for (let i = 0; i < Math.min(allPosts.length, 10); i++) {
+      const reactorIdx = (i + 1) % createdUsers.length;
+      await db.insert(reactions).values({
+        postId: allPosts[i].id,
+        userId: createdUsers[reactorIdx].id,
+        type: reactionTypes[i % reactionTypes.length],
+      }).onConflictDoNothing();
+    }
+    console.log('  Created demo reactions');
+
+    // Add some comments
+    if (allPosts.length >= 2) {
+      await db.insert(comments).values({
+        postId: allPosts[0].id,
+        userId: createdUsers[1].id,
+        content: 'This looks amazing! Adding to my bucket list.',
+      }).onConflictDoNothing();
+      await db.insert(comments).values({
+        postId: allPosts[0].id,
+        userId: createdUsers[2].id,
+        content: 'How was the weather? Planning a similar trip!',
+      }).onConflictDoNothing();
+      await db.insert(comments).values({
+        postId: allPosts[1].id,
+        userId: createdUsers[3].id,
+        content: 'Great photography! What camera did you use?',
+      }).onConflictDoNothing();
+      console.log('  Created demo comments');
+    }
+
+    // Update post counts
+    for (const p of allPosts) {
+      const reactionCount = await db.select().from(reactions).where(eq(reactions.postId, p.id));
+      const commentCount = await db.select().from(comments).where(eq(comments.postId, p.id));
+      await db.update(posts).set({
+        likesCount: reactionCount.length,
+        commentsCount: commentCount.length,
+      }).where(eq(posts.id, p.id));
+    }
+    console.log('  Updated post counts');
   }
 
   console.log('Seed complete!');
