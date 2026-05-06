@@ -24,6 +24,20 @@ export function authenticate(req: AuthRequest, res: Response, next: NextFunction
   }
 }
 
+export function optionalAuthenticate(req: AuthRequest, _res: Response, next: NextFunction): void {
+  const header = req.headers.authorization;
+  if (header?.startsWith('Bearer ')) {
+    const token = header.slice(7);
+    try {
+      const payload = jwt.verify(token, env.JWT_SECRET) as { sub: string; role: string };
+      req.user = { id: payload.sub, role: payload.role };
+    } catch {
+      // ignore — optional auth, proceed as anonymous
+    }
+  }
+  next();
+}
+
 export function requireAdmin(req: AuthRequest, res: Response, next: NextFunction): void {
   if (req.user?.role !== 'admin') {
     res.status(403).json({ success: false, error: 'Admin access required' });

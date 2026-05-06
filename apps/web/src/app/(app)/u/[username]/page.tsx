@@ -1,11 +1,14 @@
 'use client';
 
-import { use, useState } from 'react';
+import { use, useState, useCallback } from 'react';
 import { MapPin, Globe } from 'lucide-react';
-import { useUserQuery } from '@roamera/sdk';
+import { useUserQuery, useUserPostsQuery, useSavePost, useUnsavePost, getApiClient } from '@roamera/sdk';
+import { useQueryClient } from '@tanstack/react-query';
+import type { ReactionType } from '@roamera/types';
 import { useAuthStore } from '@/lib/auth-store';
 import { FollowButton } from '@/components/follow-button';
 import { FollowersModal } from '@/components/followers-modal';
+import { PostCard } from '@/components/posts/post-card';
 
 export default function ProfilePage({ params }: { params: Promise<{ username: string }> }) {
   const { username } = use(params);
@@ -105,9 +108,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
         )}
       </div>
 
-      <div className="bg-white dark:bg-slate-900 rounded-2xl p-8 shadow-card text-center">
-        <p className="text-slate-500">Posts will appear here in Sprint 2.</p>
-      </div>
+      <UserPosts userId={profile.id} />
 
       {modal && (
         <FollowersModal
@@ -115,6 +116,73 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
           type={modal}
           onClose={() => setModal(null)}
         />
+      )}
+    </div>
+  );
+}
+
+function UserPosts({ userId }: { userId: string }) {
+  const queryClient = useQueryClient();
+  const { data, isLoading, fetchNextPage, hasNextPage } = useUserPostsQuery(userId);
+  const savePost = useSavePost();
+  const unsavePost = useUnsavePost();
+
+  const userPosts = data?.pages.flatMap((p) => p.posts) ?? [];
+
+  const handleReact = useCallback(
+    async (postId: string, type: ReactionType) => {
+      try {
+        await getApiClient().post(`/api/v1/posts/${postId}/reactions`, { type });
+        queryClient.invalidateQueries({ queryKey: ['users', userId, 'posts'] });
+      } catch {}
+    },
+    [queryClient, userId],
+  );
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        {[1, 2].map((i) => (
+          <div key={i} className="bg-white dark:bg-slate-900 rounded-2xl p-4 animate-pulse">
+            <div className="aspect-[16/9] bg-slate-200 dark:bg-slate-800 rounded-xl mb-4" />
+            <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-2/3" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (userPosts.length === 0) {
+    return (
+      <div className="bg-white dark:bg-slate-900 rounded-2xl p-8 shadow-card text-center">
+        <span className="text-4xl block mb-3">📸</span>
+        <p className="text-slate-500">No moments shared yet.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {userPosts.map((post) => (
+          <PostCard
+            key={post.id}
+            post={post}
+            onReact={handleReact}
+            onSave={(id) => savePost.mutate(id)}
+            onUnsave={(id) => unsavePost.mutate(id)}
+          />
+        ))}
+      </div>
+      {hasNextPage && (
+        <div className="text-center">
+          <button
+            onClick={() => fetchNextPage()}
+            className="px-6 py-2 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-colors text-sm font-medium"
+          >
+            Load more
+          </button>
+        </div>
       )}
     </div>
   );

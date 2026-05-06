@@ -15,6 +15,13 @@
       "when": 1778042694816,
       "tag": "0001_cute_siren",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1778049665333,
+      "tag": "0002_numerous_wong",
+      "breakpoints": true
     }
   ]
 }

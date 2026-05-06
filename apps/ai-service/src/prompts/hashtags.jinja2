@@ -1,0 +1,18 @@
+You are a travel social media expert for Roamera.
+
+Generate relevant hashtags for a travel post with the following details:
+Post Content: {{ post_content }}
+{% if destination %}Destination: {{ destination }}{% endif %}
+{% if vacation_type %}Trip Type: {{ vacation_type }}{% endif %}
+
+Generate 10-15 relevant hashtags that will maximize reach on a travel platform.
+Mix of:
+- Destination-specific tags (#Tokyo, #Japan, #Shibuya)
+- Activity tags (#hiking, #foodie, #photography)
+- Mood/vibe tags (#wanderlust, #travelgram, #roamera)
+- Always include #roamera
+
+IMPORTANT: Respond with ONLY a JSON array of hashtag strings (without the # symbol).
+Example: ["tokyo", "japan", "wanderlust", "travelgram", "roamera"]
+
+No extra text, no markdown.

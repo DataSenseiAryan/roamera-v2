@@ -22,6 +22,7 @@ import { getApiClient } from '../client';
 export const postKeys = {
   feed: (feed: string) => ['feed', feed] as const,
   post: (id: string) => ['posts', id] as const,
+  userPosts: (userId: string) => ['users', userId, 'posts'] as const,
   comments: (postId: string) => ['posts', postId, 'comments'] as const,
   reactions: (postId: string) => ['posts', postId, 'reactions'] as const,
   saved: () => ['feed', 'saved'] as const,
@@ -51,6 +52,30 @@ export function useFeedQuery(feed: 'global' | 'following' = 'global') {
     },
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.nextCursor : undefined),
+    staleTime: 60_000,
+  });
+}
+
+// ─── User Posts ────────────────────────────────────────────────────
+
+interface UserPostsPage {
+  posts: Post[];
+  nextCursor: string | null;
+  hasMore: boolean;
+}
+
+export function useUserPostsQuery(userId: string) {
+  return useInfiniteQuery<UserPostsPage>({
+    queryKey: postKeys.userPosts(userId),
+    queryFn: async ({ pageParam }): Promise<UserPostsPage> => {
+      const params: Record<string, string> = { limit: '20' };
+      if (pageParam) params.cursor = pageParam as string;
+      const { data } = await getApiClient().get(`/api/v1/users/${userId}/posts`, { params });
+      return data;
+    },
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.nextCursor : undefined),
+    enabled: !!userId,
     staleTime: 60_000,
   });
 }
@@ -270,6 +295,7 @@ export function useSavePost() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['feed'] });
+      queryClient.invalidateQueries({ queryKey: postKeys.saved() });
     },
   });
 }
@@ -282,6 +308,7 @@ export function useUnsavePost() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['feed'] });
+      queryClient.invalidateQueries({ queryKey: postKeys.saved() });
     },
   });
 }

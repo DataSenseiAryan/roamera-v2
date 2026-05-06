@@ -11,12 +11,12 @@
 
 ## Sprint Overview
 
-| Sprint | Name | Weeks | Key Deliverable |
-|--------|------|-------|----------------|
-| S0 | Foundation | 1 | Monorepo, CI, DB schema, design tokens, archive V1 |
-| S1 | Auth & Profile | 2–3 | Register/login/OTP/JWT, user profiles, follow graph |
-| S2 | Moments & Social | 4–5 | Posts, photos, reactions, comments, feed, search |
-| S3 | AI Planner | 6–7 | FastAPI AI service, itinerary generator, TravelLens |
+| Sprint | Name | Weeks | Key Deliverable | Status |
+|--------|------|-------|----------------|--------|
+| S0 | Foundation | 1 | Monorepo, CI, DB schema, design tokens, archive V1 | ✅ Done |
+| S1 | Auth & Profile | 2–3 | Register/login/OTP/JWT, user profiles, follow graph | ✅ Done |
+| S2 | Moments & Social | 4–5 | Posts, photos, reactions, comments, feed, search | ✅ Done |
+| S3 | AI Planner | 6–7 | FastAPI AI service, itinerary generator, TravelLens | ✅ Done |
 | S4 | Trip Planner Core | 8–10 | Days/places/assignments, drag-drop, maps, weather |
 | S5 | Budget & Packing | 11–12 | Budget tracker, splits, packing lists, bags, templates |
 | S6 | Circles & Collab | 13–14 | Meetways Circles, real-time chat, polls, notes |

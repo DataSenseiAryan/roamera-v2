@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Plus } from 'lucide-react';
-import { useFeedQuery, useSavePost, useUnsavePost, getApiClient } from '@roamera/sdk';
+import Link from 'next/link';
+import { Plus, TrendingUp, Hash, MapPin } from 'lucide-react';
+import { useFeedQuery, useSavePost, useUnsavePost, useTrendingQuery, getApiClient } from '@roamera/sdk';
 import { useQueryClient } from '@tanstack/react-query';
 import type { ReactionType } from '@roamera/types';
 import { useAuthStore } from '@/lib/auth-store';
@@ -17,6 +18,7 @@ export default function HomePage() {
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
     useFeedQuery(feedType);
+  const { data: trending } = useTrendingQuery();
 
   const queryClient = useQueryClient();
   const savePost = useSavePost();
@@ -72,7 +74,9 @@ export default function HomePage() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="flex gap-6">
+      {/* Main feed */}
+      <div className="flex-1 min-w-0 space-y-6">
       {/* Feed Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded-xl p-1">
@@ -170,6 +174,61 @@ export default function HomePage() {
           {toastMessage}
         </div>
       )}
+      </div>
+
+      {/* Trending Sidebar */}
+      <aside className="hidden lg:block w-72 flex-shrink-0 space-y-4">
+        {trending && (
+          <>
+            {trending.destinations?.length > 0 && (
+              <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-card">
+                <h3 className="flex items-center gap-2 font-semibold text-slate-800 dark:text-white mb-3 text-sm">
+                  <TrendingUp className="h-4 w-4 text-teal-600" />
+                  Trending Destinations
+                </h3>
+                <div className="space-y-2">
+                  {trending.destinations.slice(0, 5).map((dest) => (
+                    <Link
+                      key={dest.id}
+                      href={`/destinations/${dest.id}`}
+                      className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-400 transition py-1 group"
+                    >
+                      <MapPin className="h-3.5 w-3.5 text-teal-500 flex-shrink-0" />
+                      <span className="truncate group-hover:underline">{dest.name}</span>
+                      {dest.country && (
+                        <span className="text-xs text-slate-400 ml-auto flex-shrink-0">{dest.country}</span>
+                      )}
+                    </Link>
+                  ))}
+                </div>
+                <Link href="/destinations" className="block mt-3 text-xs text-teal-600 hover:text-teal-700 font-medium">
+                  View all →
+                </Link>
+              </div>
+            )}
+
+            {trending.hashtags?.length > 0 && (
+              <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-card">
+                <h3 className="flex items-center gap-2 font-semibold text-slate-800 dark:text-white mb-3 text-sm">
+                  <Hash className="h-4 w-4 text-coral-500" />
+                  Trending Hashtags
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {trending.hashtags.slice(0, 10).map((ht) => (
+                    <Link
+                      key={ht.tag}
+                      href={`/search?q=%23${encodeURIComponent(ht.tag)}`}
+                      className="px-2.5 py-1 bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 rounded-lg text-xs font-medium hover:bg-teal-100 dark:hover:bg-teal-900/50 transition"
+                    >
+                      #{ht.tag}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </aside>
     </div>
   );
 }

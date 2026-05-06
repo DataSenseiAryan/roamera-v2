@@ -1,16 +1,22 @@
 import { Router } from 'express';
 import multer from 'multer';
 import sharp from 'sharp';
-import { eq, and, like, or, sql } from 'drizzle-orm';
+import { eq, and, like, or, sql, desc, count } from 'drizzle-orm';
 
 import { UpdateProfileSchema, UserSearchParamsSchema } from '@roamera/types';
 
 import { db } from '../db/client';
-import { users, follows, posts, userSettings } from '../db/schema';
-import { authenticate, type AuthRequest } from '../middleware/auth';
+import { users, follows, posts, postPhotos, reactions, savedPosts, userSettings } from '../db/schema';
+import { authenticate, optionalAuthenticate, type AuthRequest } from '../middleware/auth';
 import { uploadRateLimit } from '../middleware/rate-limit';
 import { AppError } from '../middleware/error';
 import { uploadFile, generateStorageKey, getPublicUrl } from '../lib/storage';
+
+function formatTimestamp(ts: Date | number | null): string | null {
+  if (!ts) return null;
+  if (ts instanceof Date) return ts.toISOString();
+  return new Date(ts as number).toISOString();
+}
 
 const router = Router();
 const upload = multer({ limits: { fileSize: 5 * 1024 * 1024 }, storage: multer.memoryStorage() });
@@ -293,8 +299,117 @@ router.delete('/:userId/follow', authenticate, async (req: AuthRequest, res, nex
   }
 });
 
-// GET /:username — profile by username (must be last to avoid conflicts)
-router.get('/:username', authenticate, async (req: AuthRequest, res, next) => {
+// GET /:userId/posts — paginated posts by a user
+router.get('/:userId/posts', optionalAuthenticate, async (req: AuthRequest, res, next) => {
+  try {
+    const userId = req.params.userId as string;
+    const limit = Math.min(parseInt((req.query.limit as string) ?? '20', 10), 50);
+    const cursor = req.query.cursor as string | undefined;
+    const viewerId = req.user?.id ?? '';
+
+    const user = await db.query.users.findFirst({
+      where: (t, { eq: e }) => e(t.id, userId),
+    });
+    if (!user) throw new AppError('User not found', 404);
+
+    const userPosts = await db
+      .select()
+      .from(posts)
+      .where(
+        and(
+          eq(posts.userId, userId),
+          eq(posts.isPublished, true),
+          cursor
+            ? sql`(${posts.createdAt}, ${posts.id}) < (${new Date(Buffer.from(cursor, 'base64').toString()).toISOString()}, '')`
+            : undefined,
+        ),
+      )
+      .orderBy(desc(posts.createdAt))
+      .limit(limit + 1);
+
+    const hasMore = userPosts.length > limit;
+    const items = hasMore ? userPosts.slice(0, limit) : userPosts;
+
+    const formatted = await Promise.all(
+      items.map(async (post) => {
+        const photos = await db
+          .select()
+          .from(postPhotos)
+          .where(eq(postPhotos.postId, post.id))
+          .orderBy(postPhotos.orderIndex);
+
+        const reactionRows = await db
+          .select({ type: reactions.type, cnt: count() })
+          .from(reactions)
+          .where(eq(reactions.postId, post.id))
+          .groupBy(reactions.type);
+        const reactionCounts: Record<string, number> = {};
+        for (const r of reactionRows) reactionCounts[r.type] = r.cnt;
+
+        const viewerReaction = viewerId
+          ? await db.query.reactions.findFirst({
+              where: (t, { eq: e, and: a }) =>
+                a(e(t.postId, post.id), e(t.userId, viewerId)),
+            })
+          : null;
+
+        const saved = viewerId
+          ? await db
+              .select()
+              .from(savedPosts)
+              .where(and(eq(savedPosts.userId, viewerId), eq(savedPosts.postId, post.id)))
+              .limit(1)
+          : [];
+
+        return {
+          id: post.id,
+          userId: post.userId,
+          title: post.title,
+          content: post.content,
+          destinations: post.destinations ?? [],
+          coverUrl: getPublicUrl(post.coverKey),
+          photos: photos.map((p) => ({
+            id: p.id,
+            url: getPublicUrl(p.storageKey) ?? '',
+            orderIndex: p.orderIndex,
+            caption: p.caption,
+          })),
+          dateFrom: formatTimestamp(post.dateFrom),
+          dateTo: formatTimestamp(post.dateTo),
+          activities: post.activities ?? [],
+          hashtags: post.hashtags ?? [],
+          budgetInr: post.budgetInr,
+          vacationType: post.vacationType,
+          transportMode: post.transportMode,
+          likesCount: post.likesCount,
+          commentsCount: post.commentsCount,
+          isSaved: saved.length > 0,
+          viewerReaction: viewerReaction?.type ?? null,
+          reactionCounts,
+          author: {
+            id: user.id,
+            username: user.username,
+            displayName: user.username,
+            avatarUrl: getPublicUrl(user.avatarKey),
+          },
+          createdAt: formatTimestamp(post.createdAt) ?? '',
+          updatedAt: formatTimestamp(post.updatedAt) ?? '',
+        };
+      }),
+    );
+
+    const nextCursor = hasMore
+      ? Buffer.from(items[items.length - 1].createdAt?.toString() ?? '').toString('base64')
+      : null;
+
+    res.json({ success: true, posts: formatted, nextCursor, hasMore });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /:username — profile by username (optionally authenticated for isFollowing context)
+router.get('/:username', optionalAuthenticate, async (req: AuthRequest, res, next) => {
   try {
     const username = req.params.username as string;
 

@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX `bucket_list_user_post_uniq` ON `bucket_list` (`user_id`,`post_id`);

@@ -249,6 +249,7 @@ export const bucketList = sqliteTable(
   },
   (t) => ({
     userIdx: index('bucket_list_user_idx').on(t.userId),
+    userPostUniq: uniqueIndex('bucket_list_user_post_uniq').on(t.userId, t.postId),
   }),
 );
 

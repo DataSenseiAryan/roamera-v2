@@ -274,6 +274,8 @@ All password: `password123`
 | What is the WebSocket protocol? | `docs/architecture/07-api-surface.md §21` |
 | What is the DB schema? | `docs/architecture/06-system-architecture.md §4.2` |
 | What sprint am I in? What's next? | `docs/architecture/08-build-roadmap.md` |
+| What was implemented in past sprints? | `docs/plans/` (sprint implementation details) |
+| How to verify a sprint works? | `docs/sprint-verification.md` |
 | What tech did V1 use? | `docs/architecture/01-roamera-existing.md` |
 | What patterns does TREK use? | `docs/architecture/02-trek-reference.md` |
 | What is the product vision / screens? | `docs/architecture/03-prd-vision.md` |
@@ -284,3 +286,22 @@ All password: `password123`
 | How does file storage work? | `docs/architecture/06-system-architecture.md §6` |
 | What are the free-stack principles? | `docs/architecture/06-system-architecture.md` (stack table) |
 | What are the upgrade paths when free tiers run out? | `docs/architecture/06-system-architecture.md §16` |
+
+---
+
+## 10. Sprint Implementation Status
+
+| Sprint | Plan | Status |
+|--------|------|--------|
+| S0 | Foundation | ✅ Done |
+| S1 | Auth & Profile | ✅ Done — see `docs/plans/sprint-1-auth-profile.md` |
+| S2 | Moments & Social | ✅ Done — see `docs/plans/sprint-2-moments-social.md` |
+| S3 | AI Planner + TravelLens | ✅ Done — see `docs/plans/sprint-3-ai-travellens.md` |
+| S4+ | Trip Planner, Budget, Circles... | 🔜 Upcoming |
+
+**Current as-built notes:**
+- WebSocket: server boots and issues `ws_token`, room subscriptions deferred to S4
+- idempotency middleware: wired (S3 debt fix)
+- Public profiles: optionally authenticated (S3 debt fix)
+- AI service: Gemini primary + Groq fallback; requires `GOOGLE_API_KEY` or `GROQ_API_KEY` in `.env`
+- Amadeus: requires `AMADEUS_CLIENT_ID` + `AMADEUS_CLIENT_SECRET`; gracefully degrades to deep-links only

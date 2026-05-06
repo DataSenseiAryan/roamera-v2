@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { MapPin, Star } from 'lucide-react';
 import { useDestinationsQuery } from '@roamera/sdk';
 
@@ -68,9 +69,10 @@ export default function DestinationsPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {destinations?.map((dest) => (
-          <div
+          <Link
             key={dest.id}
-            className="bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-card hover:shadow-lg transition group"
+            href={`/destinations/${dest.id}`}
+            className="bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-card hover:shadow-lg transition group block"
           >
             <div className="aspect-[16/10] bg-gradient-to-br from-teal-100 to-teal-200 dark:from-teal-900 dark:to-teal-800 flex items-center justify-center relative">
               {dest.coverUrl ? (
@@ -110,7 +112,7 @@ export default function DestinationsPage() {
                 </p>
               )}
             </div>
-          </div>
+          </Link>
         ))}
       </div>
     </div>

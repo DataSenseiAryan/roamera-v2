@@ -7,6 +7,7 @@ import pinoHttp from 'pino-http';
 import { env } from './lib/env';
 import { logger } from './lib/logger';
 import { errorHandler } from './middleware/error';
+import { idempotencyMiddleware } from './middleware/idempotency';
 import router from './routes/index';
 
 export function createApp() {
@@ -51,6 +52,9 @@ export function createApp() {
       message: { success: false, error: 'Too many requests, please try again later.' },
     }),
   );
+
+  // Idempotency (must come after body parsing, before routes)
+  app.use(idempotencyMiddleware);
 
   // Routes
   app.use(router);
