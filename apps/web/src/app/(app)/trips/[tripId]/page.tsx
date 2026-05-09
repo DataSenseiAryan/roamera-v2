@@ -5,7 +5,8 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import {
   ArrowLeft, Plus, Users, Share2, Download, Loader2, MapPin, Copy, X,
-  Calendar, DollarSign, Package, MessageCircle,
+  Calendar, DollarSign, Package, MessageCircle, Plane, FileText, Star,
+  Trash2, Upload, Link2, Building2,
 } from 'lucide-react';
 import {
   DndContext,
@@ -34,6 +35,17 @@ import {
   useReorderAssignment,
   useDeleteAssignment,
   useDeletePlace,
+  useReservations,
+  useCreateReservation,
+  useDeleteReservation,
+  useAccommodations,
+  useCreateAccommodation,
+  useDeleteAccommodation,
+  useTripFiles,
+  useUploadTripFile,
+  useUpdateTripFile,
+  useDeleteTripFile,
+  useShareTripFile,
   getApiClient,
 } from '@roamera/sdk';
 import type { Assignment, Day, TripPlace } from '@roamera/types';
@@ -199,12 +211,23 @@ export default function TripDetailPage({ params }: { params: Promise<{ tripId: s
   const { data: days = [] } = useDaysQuery(tripId);
   const { data: places = [] } = usePlacesQuery(tripId);
   const { data: assignments = [] } = useAssignmentsQuery(tripId);
+  const { data: reservationsList = [] } = useReservations(tripId);
+  const { data: accommodationsList = [] } = useAccommodations(tripId);
+  const { data: filesList = [] } = useTripFiles(tripId);
 
   const createDay = useCreateDay();
   const createAssignment = useCreateAssignment();
   const moveAssignment = useMoveAssignment();
   const reorderAssignment = useReorderAssignment();
   const deletePlace = useDeletePlace();
+  const createReservation = useCreateReservation(tripId);
+  const deleteReservation = useDeleteReservation(tripId);
+  const createAccommodation = useCreateAccommodation(tripId);
+  const deleteAccommodation = useDeleteAccommodation(tripId);
+  const uploadFile = useUploadTripFile(tripId);
+  const updateFile = useUpdateTripFile(tripId);
+  const deleteFile = useDeleteTripFile(tripId);
+  const shareFile = useShareTripFile(tripId);
 
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
   const [activePanel, setActivePanel] = useState<'add' | 'detail' | null>(null);
@@ -212,7 +235,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ tripId: s
   const [showMembers, setShowMembers] = useState(false);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [copySuccess, setCopySuccess] = useState(false);
-  const [activeTab, setActiveTab] = useState<'itinerary' | 'budget' | 'packing' | 'collab'>('itinerary');
+  const [activeTab, setActiveTab] = useState<'itinerary' | 'budget' | 'packing' | 'collab' | 'reservations' | 'accommodations' | 'files'>('itinerary');
 
   const trip = tripData?.trip;
   const canEdit = trip?.myRole === 'owner' || trip?.myRole === 'editor';
@@ -333,9 +356,18 @@ export default function TripDetailPage({ params }: { params: Promise<{ tripId: s
           <a
             href={`/api/v1/trips/${tripId}/export/ics`}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+            title="Export to Calendar (ICS)"
+          >
+            <Calendar className="h-4 w-4" />
+            <span className="hidden sm:inline">ICS</span>
+          </a>
+          <a
+            href={`/api/v1/trips/${tripId}/export/pdf`}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+            title="Export to PDF"
           >
             <Download className="h-4 w-4" />
-            <span className="hidden sm:inline">ICS</span>
+            <span className="hidden sm:inline">PDF</span>
           </a>
         </div>
       </div>
@@ -346,6 +378,9 @@ export default function TripDetailPage({ params }: { params: Promise<{ tripId: s
           { id: 'budget' as const, label: 'Budget', icon: DollarSign },
           { id: 'packing' as const, label: 'Packing', icon: Package },
           { id: 'collab' as const, label: 'Collab', icon: MessageCircle },
+          { id: 'reservations' as const, label: 'Reservations', icon: Plane },
+          { id: 'accommodations' as const, label: 'Stays', icon: Building2 },
+          { id: 'files' as const, label: 'Files', icon: FileText },
         ]).map((tab) => (
           <button
             key={tab.id}
@@ -506,6 +541,175 @@ export default function TripDetailPage({ params }: { params: Promise<{ tripId: s
       {activeTab === 'collab' && (
         <div className="h-full min-h-[calc(100vh-220px)] overflow-y-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40">
           <CollabPanel tripId={tripId} canEdit={canEdit} />
+        </div>
+      )}
+
+      {activeTab === 'reservations' && (
+        <div className="min-h-[calc(100vh-220px)] rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Reservations</h2>
+            {canEdit && (
+              <button
+                onClick={async () => {
+                  const type = prompt('Type (flight/hotel/restaurant/other):', 'flight');
+                  const name = prompt('Name / reference:');
+                  if (type) await createReservation.mutateAsync({ type: type as any, name: name ?? undefined });
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 text-white rounded-lg text-sm hover:bg-teal-700"
+              >
+                <Plus className="h-4 w-4" /> Add Reservation
+              </button>
+            )}
+          </div>
+          {reservationsList.length === 0 ? (
+            <p className="text-sm text-slate-500 text-center py-12">No reservations yet. Add flights, hotels, or restaurants.</p>
+          ) : (
+            <div className="space-y-3">
+              {reservationsList.map((r) => (
+                <div key={r.id} className="flex items-start gap-3 p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs font-medium px-2 py-0.5 bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 rounded-full uppercase">{r.type}</span>
+                      <span className="font-medium text-slate-900 dark:text-white">{r.name ?? r.type}</span>
+                    </div>
+                    {r.startTime && <p className="text-xs text-slate-500">Time: {r.startTime}{r.endTime ? ` → ${r.endTime}` : ''}</p>}
+                    {r.confirmation && <p className="text-xs text-slate-500">Ref: {r.confirmation}</p>}
+                    {r.notes && <p className="text-xs text-slate-400 mt-1">{r.notes}</p>}
+                  </div>
+                  {canEdit && (
+                    <button onClick={() => deleteReservation.mutateAsync(r.id)} className="text-slate-400 hover:text-red-500 transition">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'accommodations' && (
+        <div className="min-h-[calc(100vh-220px)] rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Stays & Accommodations</h2>
+            {canEdit && (
+              <button
+                onClick={async () => {
+                  const confirmation = prompt('Booking reference / confirmation #:');
+                  const checkinTime = prompt('Check-in time (HH:MM):');
+                  const checkoutTime = prompt('Check-out time (HH:MM):');
+                  await createAccommodation.mutateAsync({
+                    confirmation: confirmation ?? undefined,
+                    checkinTime: checkinTime ?? undefined,
+                    checkoutTime: checkoutTime ?? undefined,
+                  });
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 text-white rounded-lg text-sm hover:bg-teal-700"
+              >
+                <Plus className="h-4 w-4" /> Add Stay
+              </button>
+            )}
+          </div>
+          {accommodationsList.length === 0 ? (
+            <p className="text-sm text-slate-500 text-center py-12">No accommodations added yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {accommodationsList.map((a) => (
+                <div key={a.id} className="flex items-start gap-3 p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+                  <Building2 className="h-5 w-5 text-teal-600 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    {a.checkinTime && <p className="text-xs text-slate-500">Check-in: {a.checkinTime}</p>}
+                    {a.checkoutTime && <p className="text-xs text-slate-500">Check-out: {a.checkoutTime}</p>}
+                    {a.confirmation && <p className="text-xs text-slate-500">Ref: {a.confirmation}</p>}
+                    {a.notes && <p className="text-xs text-slate-400 mt-1">{a.notes}</p>}
+                  </div>
+                  {canEdit && (
+                    <button onClick={() => deleteAccommodation.mutateAsync(a.id)} className="text-slate-400 hover:text-red-500 transition">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'files' && (
+        <div className="min-h-[calc(100vh-220px)] rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Trip Files</h2>
+            {canEdit && (
+              <label className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 text-white rounded-lg text-sm hover:bg-teal-700 cursor-pointer">
+                <Upload className="h-4 w-4" /> Upload File
+                <input
+                  type="file"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const fd = new FormData();
+                    fd.append('file', file);
+                    await uploadFile.mutateAsync(fd);
+                    e.target.value = '';
+                  }}
+                />
+              </label>
+            )}
+          </div>
+          {filesList.length === 0 ? (
+            <p className="text-sm text-slate-500 text-center py-12">No files uploaded yet. Upload PDFs, tickets, or images.</p>
+          ) : (
+            <div className="space-y-3">
+              {filesList.map((f) => (
+                <div key={f.id} className="flex items-center gap-3 p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+                  <FileText className="h-5 w-5 text-teal-600 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{f.filename}</p>
+                    <p className="text-xs text-slate-500">{Math.round((f.sizeBytes ?? 0) / 1024)} KB · {f.mimeType}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => updateFile.mutateAsync({ id: f.id, isStarred: !f.isStarred })}
+                      className={`transition ${f.isStarred ? 'text-yellow-500' : 'text-slate-400 hover:text-yellow-500'}`}
+                      title="Star"
+                    >
+                      <Star className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={async () => {
+                        const res = await shareFile.mutateAsync(f.id);
+                        await navigator.clipboard.writeText(res.shareUrl).catch(() => {});
+                        alert(`Share URL copied: ${res.shareUrl}`);
+                      }}
+                      className="text-slate-400 hover:text-teal-600 transition"
+                      title="Share"
+                    >
+                      <Link2 className="h-4 w-4" />
+                    </button>
+                    <a
+                      href={f.downloadUrl ?? '#'}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-slate-400 hover:text-teal-600 transition"
+                      title="Download"
+                    >
+                      <Download className="h-4 w-4" />
+                    </a>
+                    {canEdit && (
+                      <button
+                        onClick={() => deleteFile.mutateAsync({ id: f.id })}
+                        className="text-slate-400 hover:text-red-500 transition"
+                        title="Trash"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

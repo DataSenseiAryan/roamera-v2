@@ -30,3 +30,9 @@ export * from './schemas/gamification';
 
 // Notifications & Admin (Sprint 9)
 export * from './schemas/notifications';
+
+// Reservations, Files, Invites (Sprint 10)
+export * from './schemas/reservations';
+
+// MCP & Push (Sprint 11)
+export * from './schemas/mcp';

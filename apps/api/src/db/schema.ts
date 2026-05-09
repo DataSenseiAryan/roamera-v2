@@ -914,6 +914,55 @@ export const mcpTokens = sqliteTable('mcp_tokens', {
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(now),
 });
 
+export const oauthClients = sqliteTable('oauth_clients', {
+  id: text('id').primaryKey(),
+  clientId: text('client_id').notNull().unique(),
+  clientSecretHash: text('client_secret_hash'),
+  name: text('name').notNull(),
+  redirectUris: text('redirect_uris', { mode: 'json' }).$type<string[]>().notNull().default([]),
+  scopes: text('scopes', { mode: 'json' }).$type<string[]>().notNull().default([]),
+  createdBy: text('created_by').references(() => users.id),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(now),
+});
+
+export const oauthCodes = sqliteTable('oauth_codes', {
+  id: text('id').primaryKey(),
+  clientId: text('client_id').notNull().references(() => oauthClients.clientId, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  code: text('code').notNull().unique(),
+  codeChallenge: text('code_challenge'),
+  codeChallengeMethod: text('code_challenge_method'),
+  scopes: text('scopes', { mode: 'json' }).$type<string[]>().notNull().default([]),
+  expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
+  usedAt: integer('used_at', { mode: 'timestamp' }),
+});
+
+export const oauthTokens = sqliteTable('oauth_tokens', {
+  id: text('id').primaryKey(),
+  clientId: text('client_id').notNull().references(() => oauthClients.clientId, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  accessTokenHash: text('access_token_hash').notNull().unique(),
+  refreshTokenHash: text('refresh_token_hash').unique(),
+  scopes: text('scopes', { mode: 'json' }).$type<string[]>().notNull().default([]),
+  expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
+  revokedAt: integer('revoked_at', { mode: 'timestamp' }),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(now),
+});
+
+export const pushTokens = sqliteTable(
+  'push_tokens',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    token: text('token').notNull(),
+    platform: text('platform').notNull().default('unknown'),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(now),
+  },
+  (t) => ({
+    userTokenUniq: uniqueIndex('push_token_user_uniq').on(t.userId, t.token),
+  }),
+);
+
 // ═════════════════════════════════════════════════════════════════════════════
 // SYSTEM (Sprint 9 — skeleton stubs)
 // ═════════════════════════════════════════════════════════════════════════════

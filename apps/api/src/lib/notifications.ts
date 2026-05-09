@@ -12,6 +12,7 @@ import { notifications, notificationPrefs, users } from '../db/schema';
 import { sendNotificationEmail } from './email';
 import { logger } from './logger';
 import { getWsManager } from './ws';
+import { sendPushToUser } from './push';
 
 export type NotificationType =
   | 'follow'
@@ -70,6 +71,12 @@ export async function createNotification(opts: CreateNotificationOpts): Promise<
       wsManager.broadcast(`user:${opts.userId}`, 'notification:new', notification);
     } catch {
       // WsManager not yet initialised (e.g. during tests) — skip
+    }
+
+    // Send push notification (non-blocking)
+    const pushEnabled = pref ? pref.push : false;
+    if (pushEnabled) {
+      sendPushToUser(opts.userId, opts.title, opts.body ?? '', opts.data).catch(() => {});
     }
 
     // Queue email notification (non-blocking)

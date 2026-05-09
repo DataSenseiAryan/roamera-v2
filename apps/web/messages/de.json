@@ -1,0 +1,81 @@
+{
+  "nav": {
+    "home": "Startseite",
+    "trips": "Reisen",
+    "aiPlanner": "KI-Planer",
+    "travel": "Reise",
+    "circles": "Kreise",
+    "justsplit": "JustSplit",
+    "journeys": "Reisetagebücher",
+    "atlas": "Atlas",
+    "settings": "Einstellungen",
+    "admin": "Admin",
+    "signOut": "Abmelden"
+  },
+  "common": {
+    "loading": "Wird geladen...",
+    "error": "Etwas ist schiefgelaufen",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "add": "Hinzufügen",
+    "close": "Schließen",
+    "confirm": "Bestätigen",
+    "back": "Zurück",
+    "search": "Suchen",
+    "noResults": "Keine Ergebnisse gefunden",
+    "required": "Dieses Feld ist erforderlich"
+  },
+  "auth": {
+    "signIn": "Anmelden",
+    "signUp": "Konto erstellen",
+    "email": "E-Mail",
+    "password": "Passwort",
+    "forgotPassword": "Passwort vergessen?",
+    "noAccount": "Kein Konto?",
+    "hasAccount": "Bereits ein Konto?",
+    "continueWith": "Weiter mit",
+    "verifyEmail": "E-Mail bestätigen",
+    "otpSent": "Ein Code wurde an Ihre E-Mail gesendet",
+    "enterOtp": "Code eingeben"
+  },
+  "trips": {
+    "myTrips": "Meine Reisen",
+    "newTrip": "Neue Reise",
+    "noTrips": "Noch keine Reisen. Fang an zu planen!",
+    "itinerary": "Reiseroute",
+    "budget": "Budget",
+    "packing": "Packliste",
+    "collab": "Zusammenarbeit",
+    "reservations": "Reservierungen",
+    "stays": "Unterkünfte",
+    "files": "Dateien",
+    "members": "Mitglieder",
+    "share": "Teilen",
+    "export": "Exportieren",
+    "exportICS": "ICS exportieren",
+    "exportPDF": "PDF exportieren",
+    "addDay": "Tag hinzufügen",
+    "addPlace": "Ort hinzufügen",
+    "noReservations": "Noch keine Reservierungen.",
+    "noAccommodations": "Noch keine Unterkünfte hinzugefügt.",
+    "noFiles": "Noch keine Dateien hochgeladen."
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "account": "Konto",
+    "notifications": "Benachrichtigungen",
+    "language": "Sprache",
+    "selectLanguage": "Sprache auswählen",
+    "theme": "Design",
+    "darkMode": "Dunkelmodus",
+    "saveChanges": "Änderungen speichern"
+  },
+  "offline": {
+    "title": "Sie sind offline",
+    "description": "Keine Internetverbindung erkannt. Einige Inhalte sind möglicherweise aus dem Cache verfügbar.",
+    "tryAgain": "Erneut versuchen",
+    "viewCachedTrips": "Gecachte Reisen anzeigen"
+  }
+}

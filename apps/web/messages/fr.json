@@ -1,0 +1,81 @@
+{
+  "nav": {
+    "home": "Accueil",
+    "trips": "Voyages",
+    "aiPlanner": "Planificateur IA",
+    "travel": "Voyage",
+    "circles": "Cercles",
+    "justsplit": "JustSplit",
+    "journeys": "Journaux",
+    "atlas": "Atlas",
+    "settings": "Paramètres",
+    "admin": "Admin",
+    "signOut": "Se déconnecter"
+  },
+  "common": {
+    "loading": "Chargement...",
+    "error": "Une erreur est survenue",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "add": "Ajouter",
+    "close": "Fermer",
+    "confirm": "Confirmer",
+    "back": "Retour",
+    "search": "Rechercher",
+    "noResults": "Aucun résultat",
+    "required": "Ce champ est requis"
+  },
+  "auth": {
+    "signIn": "Se connecter",
+    "signUp": "Créer un compte",
+    "email": "E-mail",
+    "password": "Mot de passe",
+    "forgotPassword": "Mot de passe oublié ?",
+    "noAccount": "Pas encore de compte ?",
+    "hasAccount": "Déjà un compte ?",
+    "continueWith": "Continuer avec",
+    "verifyEmail": "Vérifiez votre e-mail",
+    "otpSent": "Un code vous a été envoyé par e-mail",
+    "enterOtp": "Entrez le code"
+  },
+  "trips": {
+    "myTrips": "Mes voyages",
+    "newTrip": "Nouveau voyage",
+    "noTrips": "Aucun voyage pour l'instant. Commencez à planifier !",
+    "itinerary": "Itinéraire",
+    "budget": "Budget",
+    "packing": "Bagages",
+    "collab": "Collaboration",
+    "reservations": "Réservations",
+    "stays": "Hébergements",
+    "files": "Fichiers",
+    "members": "Membres",
+    "share": "Partager",
+    "export": "Exporter",
+    "exportICS": "Exporter ICS",
+    "exportPDF": "Exporter PDF",
+    "addDay": "Ajouter un jour",
+    "addPlace": "Ajouter un lieu",
+    "noReservations": "Aucune réservation pour l'instant.",
+    "noAccommodations": "Aucun hébergement ajouté pour l'instant.",
+    "noFiles": "Aucun fichier téléchargé pour l'instant."
+  },
+  "settings": {
+    "title": "Paramètres",
+    "account": "Compte",
+    "notifications": "Notifications",
+    "language": "Langue",
+    "selectLanguage": "Sélectionner la langue",
+    "theme": "Thème",
+    "darkMode": "Mode sombre",
+    "saveChanges": "Enregistrer les modifications"
+  },
+  "offline": {
+    "title": "Vous êtes hors ligne",
+    "description": "Aucune connexion internet détectée. Certains contenus peuvent être disponibles depuis le cache.",
+    "tryAgain": "Réessayer",
+    "viewCachedTrips": "Voir les voyages en cache"
+  }
+}

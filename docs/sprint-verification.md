@@ -893,3 +893,121 @@ curl -s "$BASE/admin/users" -H "Authorization: Bearer $TOKEN" | jq '.users | len
 - [x] System notice created by admin → banner visible to all logged-in users
 - [x] `./scripts/test-sprint.sh` exits 0 — all 75 tests green
 - [x] AI service works with mock provider (no API key required in dev)
+
+---
+
+## Sprint 10 — Reservations, Files, Export, PWA & i18n
+
+### What to Test
+
+1. **Reservations**: Create trip → Reservations tab → Add flight/hotel → verify card shows, delete works
+2. **Accommodations**: Stays tab → Add stay with check-in time → confirm row appears
+3. **Files**: Files tab → upload any file → star it → share → copy URL → download link → soft-trash
+4. **ICS Export**: Click "ICS" button on trip header → file downloads → import to Calendar app
+5. **PDF Export**: Click "PDF" button → PDF downloads with trip name as header
+6. **Offline Bundle**: `GET /api/v1/trips/:id/bundle` returns trip + days + members in one payload
+7. **Invite tokens**: Admin creates invite via `POST /api/v1/invites` → validate token via `GET /api/v1/invites/:token`
+8. **PWA**: Serve web in production mode → `/manifest.webmanifest` returns JSON with name, icons
+9. **Offline page**: Navigate to `/offline` → shows "You're offline" with retry button
+10. **i18n**: Go to Settings → Language → click "हिंदी" → page reloads with Hindi labels in nav
+
+### API Smoke Tests (S10)
+
+```bash
+BASE="http://localhost:3000/api/v1"
+TOKEN=$(curl -s -X POST $BASE/auth/login -H "Content-Type: application/json" \
+  -d '{"email":"arya@demo.roamera.in","password":"password123"}' | jq -r .accessToken)
+
+# Create a trip first
+TRIP_ID=$(curl -s -X POST $BASE/trips -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Test S10 Trip"}' | jq -r '.trip.id')
+
+# Create reservation
+curl -s -X POST $BASE/trips/$TRIP_ID/reservations \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"type":"flight","name":"AI 101","confirmation":"ABC123"}' | jq .id
+
+# List reservations
+curl -s "$BASE/trips/$TRIP_ID/reservations" -H "Authorization: Bearer $TOKEN" | jq length
+
+# Offline bundle
+curl -s "$BASE/trips/$TRIP_ID/bundle" -H "Authorization: Bearer $TOKEN" | jq '{trip:.trip.id, days:(.days|length)}
+
+# ICS export (check content-type header)
+curl -sI "$BASE/trips/$TRIP_ID/export/ics" -H "Authorization: Bearer $TOKEN" | grep -i content-type
+
+# PDF export (check content-type header)
+curl -sI "$BASE/trips/$TRIP_ID/export/pdf" -H "Authorization: Bearer $TOKEN" | grep -i content-type
+
+# Invite token flow (admin)
+curl -s -X POST $BASE/invites -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" -d '{"expiresInDays":7}' | jq .token
+```
+
+### Sprint 10 Acceptance Criteria
+
+- [x] Reservation CRUD: Create → 201 with id, Delete → 204
+- [x] Accommodation CRUD: Create → 201, List → array
+- [x] File upload → 201 with filename + storageKey, soft-trash → 204
+- [x] File share: POST /files/:id/share → shareToken + shareUrl in response
+- [x] ICS export returns `text/calendar` content-type
+- [x] PDF export returns `application/pdf` content-type with trip title in PDF
+- [x] Offline bundle: trip + days + places + reservations + accommodations all present
+- [x] Invite token: valid token returns `{valid: true}`, expired/exhausted → 410
+- [x] PWA manifest at `/manifest.webmanifest` with correct theme_color `#0D9488`
+- [x] i18n: 5 locale JSON files present, locale switcher in settings
+- [x] `reservations.test.ts` + `files.test.ts` pass (10 + 7 assertions)
+
+---
+
+## Sprint 11 — MCP Server, Mobile Polish & Push Notifications
+
+### Smoke Tests
+
+```bash
+BASE="http://localhost:3000"
+TOKEN="<your-jwt-token>"
+
+# OAuth 2.1 discovery
+curl -s "$BASE/api/v1/mcp/.well-known/oauth-authorization-server" | jq .scopes_supported
+
+# Create static MCP token
+curl -s -X POST "$BASE/api/v1/mcp/tokens" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Claude Desktop","scopes":["trips:read","budget:read"]}' | jq .token
+
+# Register push token
+curl -s -X POST "$BASE/api/v1/push/register" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"token":"ExponentPushToken[test]","platform":"ios"}' | jq .
+
+# Dynamic Client Registration
+curl -s -X POST "$BASE/api/v1/mcp/oauth/register" \
+  -H "Content-Type: application/json" \
+  -d '{"client_name":"Test Client","redirect_uris":["http://localhost:8080/callback"]}' | jq .client_id
+```
+
+### Sprint 11 Acceptance Criteria
+
+- [x] OAuth 2.1 discovery endpoint returns issuer, token_endpoint, scopes_supported
+- [x] Dynamic Client Registration → 201 with client_id + client_secret
+- [x] Static MCP token creation → 201, token starts with `mcp_` (shown once)
+- [x] MCP /server endpoint → 401 without auth, 200 with valid token
+- [x] Revoked token → 401 on /server
+- [x] Push register → 201; duplicate → 200; unregister → 204; no-token → 400
+- [x] Total API tests: 100 passing (16 test files)
+- [x] Mobile Compass tab wired to /api/v1/feed/compass with pull-to-refresh + haptic reactions
+- [x] Mobile Trips tab lists trips; tap → detail → budget/packing sub-screens
+- [x] Mobile packing items swipe-to-check with expo-haptics
+- [x] Mobile AI tab: conversational UI wired to /api/v1/ai/chat
+- [x] Mobile Circles tab + detail with JustSplit summary
+- [x] Mobile Profile tab with stats + notifications badge + logout
+- [x] Mobile Notifications screen with mark-all-read
+- [x] Mobile dark mode via useColorScheme + manual dark: style variants
+- [x] Mobile offline banner via NetInfo + Dexie offline cache
+- [x] Web /settings/mcp: list/create/revoke static tokens + Claude Desktop usage instructions
+- [x] Web /oauth/authorize: consent page shows scopes, allow/deny
+- [x] Web dark mode: next-themes ThemeProvider + toggle in settings (system default)

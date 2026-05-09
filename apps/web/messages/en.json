@@ -1,0 +1,81 @@
+{
+  "nav": {
+    "home": "Home",
+    "trips": "Trips",
+    "aiPlanner": "AI Planner",
+    "travel": "Travel",
+    "circles": "Circles",
+    "justsplit": "JustSplit",
+    "journeys": "Journeys",
+    "atlas": "Atlas",
+    "settings": "Settings",
+    "admin": "Admin",
+    "signOut": "Sign out"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "close": "Close",
+    "confirm": "Confirm",
+    "back": "Back",
+    "search": "Search",
+    "noResults": "No results found",
+    "required": "This field is required"
+  },
+  "auth": {
+    "signIn": "Sign in",
+    "signUp": "Create account",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot password?",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "continueWith": "Continue with",
+    "verifyEmail": "Verify your email",
+    "otpSent": "A one-time code was sent to your email",
+    "enterOtp": "Enter code"
+  },
+  "trips": {
+    "myTrips": "My Trips",
+    "newTrip": "New Trip",
+    "noTrips": "No trips yet. Start planning!",
+    "itinerary": "Itinerary",
+    "budget": "Budget",
+    "packing": "Packing",
+    "collab": "Collab",
+    "reservations": "Reservations",
+    "stays": "Stays",
+    "files": "Files",
+    "members": "Members",
+    "share": "Share",
+    "export": "Export",
+    "exportICS": "Export ICS",
+    "exportPDF": "Export PDF",
+    "addDay": "Add Day",
+    "addPlace": "Add Place",
+    "noReservations": "No reservations yet. Add flights, hotels, or restaurants.",
+    "noAccommodations": "No accommodations added yet.",
+    "noFiles": "No files uploaded yet. Upload PDFs, tickets, or images."
+  },
+  "settings": {
+    "title": "Settings",
+    "account": "Account",
+    "notifications": "Notifications",
+    "language": "Language",
+    "selectLanguage": "Select language",
+    "theme": "Theme",
+    "darkMode": "Dark mode",
+    "saveChanges": "Save changes"
+  },
+  "offline": {
+    "title": "You're offline",
+    "description": "No internet connection detected. Some content may be available from cache.",
+    "tryAgain": "Try Again",
+    "viewCachedTrips": "View Cached Trips"
+  }
+}

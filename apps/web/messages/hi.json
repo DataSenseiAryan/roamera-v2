@@ -1,0 +1,81 @@
+{
+  "nav": {
+    "home": "होम",
+    "trips": "यात्राएं",
+    "aiPlanner": "AI प्लानर",
+    "travel": "ट्रैवल",
+    "circles": "सर्कल",
+    "justsplit": "JustSplit",
+    "journeys": "जर्नी",
+    "atlas": "एटलस",
+    "settings": "सेटिंग्स",
+    "admin": "एडमिन",
+    "signOut": "साइन आउट"
+  },
+  "common": {
+    "loading": "लोड हो रहा है...",
+    "error": "कुछ गलत हो गया",
+    "save": "सहेजें",
+    "cancel": "रद्द करें",
+    "delete": "हटाएं",
+    "edit": "संपादित करें",
+    "add": "जोड़ें",
+    "close": "बंद करें",
+    "confirm": "पुष्टि करें",
+    "back": "वापस",
+    "search": "खोजें",
+    "noResults": "कोई परिणाम नहीं मिला",
+    "required": "यह फ़ील्ड आवश्यक है"
+  },
+  "auth": {
+    "signIn": "साइन इन करें",
+    "signUp": "खाता बनाएं",
+    "email": "ईमेल",
+    "password": "पासवर्ड",
+    "forgotPassword": "पासवर्ड भूल गए?",
+    "noAccount": "खाता नहीं है?",
+    "hasAccount": "पहले से खाता है?",
+    "continueWith": "जारी रखें",
+    "verifyEmail": "ईमेल सत्यापित करें",
+    "otpSent": "आपके ईमेल पर एक OTP भेजा गया",
+    "enterOtp": "OTP दर्ज करें"
+  },
+  "trips": {
+    "myTrips": "मेरी यात्राएं",
+    "newTrip": "नई यात्रा",
+    "noTrips": "अभी तक कोई यात्रा नहीं। योजना बनाना शुरू करें!",
+    "itinerary": "यात्रा कार्यक्रम",
+    "budget": "बजट",
+    "packing": "पैकिंग",
+    "collab": "सहयोग",
+    "reservations": "आरक्षण",
+    "stays": "ठहरने की जगह",
+    "files": "फाइलें",
+    "members": "सदस्य",
+    "share": "साझा करें",
+    "export": "निर्यात",
+    "exportICS": "ICS निर्यात",
+    "exportPDF": "PDF निर्यात",
+    "addDay": "दिन जोड़ें",
+    "addPlace": "जगह जोड़ें",
+    "noReservations": "अभी तक कोई आरक्षण नहीं।",
+    "noAccommodations": "अभी तक कोई आवास नहीं जोड़ा गया।",
+    "noFiles": "अभी तक कोई फाइल अपलोड नहीं की गई।"
+  },
+  "settings": {
+    "title": "सेटिंग्स",
+    "account": "खाता",
+    "notifications": "सूचनाएं",
+    "language": "भाषा",
+    "selectLanguage": "भाषा चुनें",
+    "theme": "थीम",
+    "darkMode": "डार्क मोड",
+    "saveChanges": "परिवर्तन सहेजें"
+  },
+  "offline": {
+    "title": "आप ऑफलाइन हैं",
+    "description": "इंटरनेट कनेक्शन नहीं मिला। कुछ सामग्री कैश से उपलब्ध हो सकती है।",
+    "tryAgain": "फिर कोशिश करें",
+    "viewCachedTrips": "कैश्ड यात्राएं देखें"
+  }
+}

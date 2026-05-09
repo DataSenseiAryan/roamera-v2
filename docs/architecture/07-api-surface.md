@@ -113,8 +113,9 @@ hashtags[], itinerary_json
 | `DELETE` | `/:tripId` | auth (owner) | Delete trip |
 | `POST` | `/:tripId/cover` | auth (owner) | Upload cover image |
 | `POST` | `/:tripId/copy` | auth (member) | Duplicate trip |
-| `GET`  | `/:tripId/bundle` | auth (member) | Full trip offline payload — *deferred to S10* |
-| `GET`  | `/:tripId/export/ics` | auth (member) | Export trip as `.ics` calendar |
+| `GET`  | `/:tripId/bundle` | auth (member) | Full trip offline payload ✅ Implemented (S10) |
+| `GET`  | `/:tripId/export/ics` | auth (member) | Export trip as `.ics` calendar ✅ Improved (S10, ical-generator) |
+| `GET`  | `/:tripId/export/pdf` | auth (member) | Export trip as PDF ✅ Implemented (S10, pdfmake) |
 | `POST` | `/:tripId/share` | auth (owner) | Create/refresh public share link |
 | `DELETE` | `/:tripId/share` | auth (owner) | Delete share link |
 | `GET`  | `/shared/:token` | [public] | Public trip view (read-only) |
@@ -166,7 +167,7 @@ hashtags[], itinerary_json
 | `PATCH` | `/:tripId/days/:dayId/notes/:noteId` | auth (editor) | Edit note |
 | `DELETE` | `/:tripId/days/:dayId/notes/:noteId` | auth (editor) | Delete note |
 
-### 5.6 Reservations
+### 5.6 Reservations ✅ Implemented (S10)
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
@@ -175,7 +176,7 @@ hashtags[], itinerary_json
 | `PATCH` | `/:tripId/reservations/:id` | auth (editor) | Update reservation |
 | `DELETE` | `/:tripId/reservations/:id` | auth (editor) | Delete reservation |
 
-### 5.7 Accommodations
+### 5.7 Accommodations ✅ Implemented (S10)
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
@@ -237,15 +238,18 @@ hashtags[], itinerary_json
 | `POST` | `/:tripId/collab/polls/:id/vote` | auth (member) | Vote (single clears prior; multi toggles) |
 | `POST` | `/:tripId/collab/polls/:id/close` | auth (editor) | Close poll |
 
-### 5.11 Trip Files
+### 5.11 Trip Files ✅ Implemented (S10)
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| `GET`  | `/:tripId/files` | auth (member) | File list |
-| `POST` | `/:tripId/files` | auth (editor) | Upload file (multipart → R2) |
-| `PATCH` | `/:tripId/files/:id` | auth (editor) | Update metadata, star, link to place/reservation |
-| `DELETE` | `/:tripId/files/:id` | auth (editor) | Trash file |
-| `DELETE` | `/:tripId/files/:id/permanent` | auth (owner) | Permanently delete |
+| `GET`  | `/:tripId/files` | auth (member) | File list (non-trashed) |
+| `POST` | `/:tripId/files` | auth (editor) | Upload file (multipart → local/R2) |
+| `PATCH` | `/:tripId/files/:id` | auth (editor) | Update metadata (star toggle, rename) |
+| `DELETE` | `/:tripId/files/:id` | auth (editor) | Soft-trash file |
+| `DELETE` | `/:tripId/files/:id/permanent` | auth (owner) | Permanently delete + remove from storage |
+| `GET`  | `/:tripId/files/:id/download` | auth (member) | Get presigned/local download URL |
+| `POST` | `/:tripId/files/:id/share` | auth (editor) | Generate public share URL |
+| `GET`  | `/files/shared/:token` | public | Download file by share token |
 | `GET`  | `/:tripId/files/:id/download` | auth (member) | Presigned download URL |
 | `POST` | `/:tripId/files/:id/share` | auth (member) | Create public share download token |
 
@@ -438,21 +442,22 @@ All routes require `role = admin`.
 
 ---
 
-## 17. MCP Server — `/api/v1/mcp`
+## 17. MCP Server — `/api/v1/mcp` ✅ Implemented (S11)
 
-OAuth 2.1 endpoints for AI assistants (TREK pattern).
+OAuth 2.1 endpoints for AI assistants (TREK pattern). Uses `@modelcontextprotocol/sdk` v1.29.0 StreamableHTTP transport.
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| `GET`  | `/.well-known/oauth-authorization-server` | [public] | OAuth discovery |
-| `POST` | `/oauth/token` | [public] | Authorization code + refresh token exchange |
-| `POST` | `/oauth/revoke` | auth | Revoke token |
-| `POST` | `/oauth/register` | auth | Dynamic Client Registration |
-| `GET`  | `/oauth/authorize` | auth | Consent UI |
-| `POST` | `/oauth/authorize` | auth | Submit consent |
+| `GET`  | `/.well-known/oauth-authorization-server` | [public] | OAuth 2.1 discovery document |
+| `POST` | `/oauth/token` | [public] | Authorization code + PKCE exchange; refresh token support |
+| `POST` | `/oauth/revoke` | [public] | Revoke access or refresh token |
+| `POST` | `/oauth/register` | [public] | Dynamic Client Registration (RFC 7591) |
+| `GET`  | `/oauth/authorize` | auth | Consent info (returns JSON for web consent UI) |
+| `POST` | `/oauth/authorize` | auth | Submit consent (approve/deny) → issues auth code |
 | `GET`  | `/tokens` | auth | User's MCP static tokens |
-| `POST` | `/tokens` | auth | Create static MCP token |
+| `POST` | `/tokens` | auth | Create static MCP token (returns raw token once) |
 | `DELETE` | `/tokens/:id` | auth | Revoke static token |
+| `POST` | `/server` | Bearer (static or OAuth) | MCP StreamableHTTP endpoint (11 tools) |
 
 **MCP Tools (AI assistant can call):**
 
@@ -586,7 +591,21 @@ Connection: `wss://api.roamera.in/ws?token=<ws_token>`
 
 ---
 
-## 22. V1 → V2 Endpoint Migration Reference
+## 22. Push Tokens — `/api/v1/push` ✅ Implemented (S11)
+
+Manages Expo push tokens for native mobile notifications.
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `POST` | `/register` | auth | Register Expo push token for current device (upsert) |
+| `DELETE` | `/unregister` | auth | Remove push token for current device |
+| `GET` | `/` | auth | List push tokens for current user |
+
+Push notifications are sent via `expo-server-sdk` when a notification is created (if `push` preference enabled).
+
+---
+
+## 23. V1 → V2 Endpoint Migration Reference
 
 > V1 routes are listed here for cross-reference only. V2 routes are written from scratch.
 

@@ -12,10 +12,7 @@ describe('Posts API', () => {
     const res = await request(app)
       .post('/api/v1/posts')
       .set('Authorization', `Bearer ${userToken}`)
-      .field('caption', 'Test post caption')
-      .field('destinations', JSON.stringify([{ name: 'Test City' }]))
-      .field('photos', JSON.stringify([]));
-    // Accept 201 or 400 (no photos uploaded) — just verify auth works
+      .send({ title: 'Test post caption', content: 'Trip to the mountains' });
     expect([201, 400]).toContain(res.status);
     if (res.status === 201) postId = res.body.post?.id;
   });

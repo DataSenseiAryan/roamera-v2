@@ -294,6 +294,27 @@ All password: `password123`
 - JWT secrets in tests must be ≥ 32 chars (Zod env validation enforces this)
 - Vitest runs tests sequentially (`fileParallelism: false, singleFork: true`) to prevent SQLite locking
 
+### S11 As-Built Notes
+- **MCP**: `apps/api/src/routes/mcp.ts` — OAuth 2.1 (discovery + DCR + authorize + token + revoke), static token CRUD, MCP StreamableHTTP (`@modelcontextprotocol/sdk` v1.29.0) with 11 tools: `get_trips`, `get_trip_details`, `create_trip`, `add_place_to_trip`, `get_weather`, `search_places`, `get_budget_summary`, `get_packing_list`, `mark_item_packed`, `get_user_atlas`, `get_notifications`
+- **Push**: `apps/api/src/routes/push.ts` + `apps/api/src/lib/push.ts` (expo-server-sdk sender). Push fires when notification is created and user has `push=true` pref.
+- **DB migration**: `drizzle/0009_plain_rhodey.sql` — `oauth_clients`, `oauth_codes`, `oauth_tokens`, `push_tokens` tables
+- **Mobile tabs**: All 5 tabs wired (Compass → feed, Trips → trip detail + budget + packing with haptics, AI → conversational chat, Circles → detail + JustSplit, Profile → stats + notifications badge)
+- **Mobile screens**: `app/notifications.tsx`, `app/trips/[tripId].tsx`, `app/trips/[tripId]/budget.tsx`, `app/trips/[tripId]/packing.tsx`, `app/circles/[circleId].tsx`
+- **Mobile libs**: `lib/push.ts` (expo-notifications registration), `lib/offline.ts` (Dexie cache + mutation queue), `components/OfflineBanner.tsx` (NetInfo)
+- **Web**: `/settings/mcp` token management page, `/oauth/authorize` consent page, next-themes dark mode in root layout
+- **Tests**: 100 total API tests passing (16 test files incl. `mcp.test.ts` (11) + `push.test.ts` (6))
+
+### S10 As-Built Notes
+- **Reservations/Accommodations**: Drizzle `id` field on these tables has no `$defaultFn` — inserted with explicit `crypto.randomUUID()` and `as any` cast
+- **PdfMake**: Import via `require('pdfmake/build/pdfmake')` (not default ESM import) due to missing construct signatures in `@types/pdfmake`
+- **ical-generator**: Used instead of hand-rolled ICS strings; imported via `import ical from 'ical-generator'`
+- **Trip files router**: `apps/api/src/routes/trip-files.ts` mounted at `/:tripId/files` inside trips.ts with `mergeParams: true`
+- **PWA**: `@serwist/next` wraps `next.config.ts`. SW is in `src/app/sw.ts`. Disabled in dev mode (`disable: process.env.NODE_ENV === 'development'`).
+- **i18n**: `next-intl` routing configured in `src/i18n/routing.ts`. Locale cookie set via `document.cookie` in settings page locale switcher.
+- **Invites**: `POST /api/v1/invites` (admin only) → token valid via `GET /api/v1/invites/:token`. Invite-gated registration can be built on top using `invite_tokens` table.
+- **Bundle endpoint**: `GET /:tripId/bundle` returns full JSON payload for offline PWA/mobile cache
+- **env**: Added `API_BASE_URL` to `apps/api/src/lib/env.ts` (defaults to `http://localhost:3000`)
+
 ---
 
 ## 9. Where to Look
@@ -333,6 +354,9 @@ All password: `password123`
 | S6 | Circles & Collab | ✅ Done — see `docs/plans/sprint-6-circles-collab.md` |
 | S7 | JustSplit | ✅ Done — see `docs/plans/sprint-7-justsplit.md` |
 | S8 | Journey & Atlas | ✅ Done — see `docs/plans/sprint-8-journey-atlas.md` |
+| S9 | Notifications & Admin | ✅ Done — see `docs/plans/sprint-9-notifications-admin.md` |
+| S10 | Reservations, Files, Export, PWA & i18n | ✅ Done — see `docs/plans/sprint-10-reservations-files-pwa-i18n.md` |
+| S11 | MCP Server, Mobile Polish & Push Notifications | ✅ Done — see `docs/plans/sprint-11-mcp-mobile.md` |
 
 **Current as-built notes (S1–S8):**
 - **WebSocket**: `WsManager` class in `apps/api/src/lib/ws.ts` — token auth, room subscriptions, broadcast. Wire: `GET /api/v1/auth/ws-token` → connect WS → subscribe to `trip:{id}` room.

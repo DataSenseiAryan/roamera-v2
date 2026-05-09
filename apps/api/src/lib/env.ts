@@ -23,6 +23,7 @@ const envSchema = z.object({
   PEXELS_API_KEY: z.string().optional(),
   FOURSQUARE_API_KEY: z.string().optional(),
   SENTRY_DSN: z.string().optional(),
+  API_BASE_URL: z.string().default('http://localhost:3000'),
 });
 
 function parseEnv() {

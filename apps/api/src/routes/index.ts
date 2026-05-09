@@ -20,6 +20,9 @@ import weatherRouter from './weather';
 import { adminRouter as adminPackingRouter, publicRouter as publicPackingTemplatesRouter } from './admin-packing';
 import notificationsRouter from './notifications';
 import adminRouter, { getActiveNotices } from './admin';
+import invitesRouter from './invites';
+import mcpRouter from './mcp';
+import pushRouter from './push';
 
 const router = Router();
 
@@ -67,7 +70,12 @@ router.use('/api/v1/admin', adminRouter);
 // Public: active system notices (no auth required)
 router.get('/api/v1/notices', getActiveNotices as never);
 
-// Sprint 11: MCP
-// router.use('/api/v1/mcp', mcpRouter);
+
+// Sprint 10: Invites
+router.use('/api/v1/invites', invitesRouter);
+
+// Sprint 11: MCP + OAuth + Push
+router.use('/api/v1/mcp', mcpRouter);
+router.use('/api/v1/push', pushRouter);
 
 export default router;

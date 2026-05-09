@@ -1,6 +1,14 @@
 import { Router } from 'express';
 import multer from 'multer';
 import { eq, and, desc, asc } from 'drizzle-orm';
+import ical from 'ical-generator';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const pdfmakeLib = require('pdfmake');
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const helveticaFonts = require('pdfmake/standard-fonts/Helvetica');
+pdfmakeLib.setLocalAccessPolicy(() => true);
+pdfmakeLib.setUrlAccessPolicy(() => true);
+pdfmakeLib.setFonts(helveticaFonts);
 
 import { db } from '../db/client';
 import {
@@ -11,6 +19,8 @@ import {
   dayAssignments,
   dayNotes,
   users,
+  reservations,
+  accommodations,
 } from '../db/schema';
 import { authenticate, type AuthRequest } from '../middleware/auth';
 import { AppError } from '../middleware/error';
@@ -20,6 +30,7 @@ import { createNotification } from '../lib/notifications';
 import budgetRouter from './budget';
 import collabRouter from './collab';
 import packingRouter from './packing';
+import tripFilesRouter from './trip-files';
 
 const router = Router();
 const upload = multer({ limits: { fileSize: 5 * 1024 * 1024 }, storage: multer.memoryStorage() });
@@ -150,6 +161,7 @@ router.post('/', authenticate, async (req: AuthRequest, res, next) => {
 router.use('/:tripId/budget', budgetRouter);
 router.use('/:tripId/packing', packingRouter);
 router.use('/:tripId/collab', collabRouter);
+router.use('/:tripId/files', tripFilesRouter);
 
 // GET /api/v1/trips/:tripId — trip detail
 router.get('/:tripId', authenticate, async (req: AuthRequest, res, next) => {
@@ -985,13 +997,10 @@ router.get('/shared/:token', async (req, res, next) => {
 
 // ─── ICS EXPORT ────────────────────────────────────────────────────
 
-// GET /:tripId/export/ics
 router.get('/:tripId/export/ics', authenticate, async (req: AuthRequest, res, next) => {
   try {
     const tripId = req.params.tripId as string;
-    const userId = req.user!.id;
-
-    const role = await getMemberRole(tripId, userId);
+    const role = await getMemberRole(tripId, req.user!.id);
     if (!role) throw new AppError('Trip not found', 404);
 
     const trip = await db.query.trips.findFirst({ where: (t, { eq: e }) => e(t.id, tripId) });
@@ -1001,63 +1010,343 @@ router.get('/:tripId/export/ics', authenticate, async (req: AuthRequest, res, ne
       where: (t, { eq: e }) => e(t.tripId, tripId),
       orderBy: (t) => asc(t.dayNumber),
     });
-
     const assignments = await db.query.dayAssignments.findMany({
       where: (t, { eq: e }) => e(t.tripId, tripId),
-      orderBy: (t) => asc(t.dayId),
     });
-
     const placesList = await db.query.places.findMany({
+      where: (t, { eq: e }) => e(t.tripId, tripId),
+    });
+    const resRows = await db.select().from(reservations).where(eq(reservations.tripId, String(tripId)));
+
+    const placeMap = new Map(placesList.map((p) => [p.id, p]));
+
+    const cal = ical({ name: trip.title, prodId: '//Roamera//Trip Planner//EN' });
+
+    for (const assign of assignments) {
+      const day = daysList.find((d) => d.id === assign.dayId);
+      const place = placeMap.get(assign.placeId);
+      if (!day || !place) continue;
+
+      const baseDate = day.date
+        ? (day.date instanceof Date ? day.date : new Date((day.date as number) * 1000))
+        : (trip.dateFrom ? (trip.dateFrom instanceof Date ? trip.dateFrom : new Date((trip.dateFrom as number) * 1000)) : new Date());
+
+      const [startHH = '10', startMM = '00'] = (assign.placeTime ?? '10:00').split(':');
+      const dtStart = new Date(baseDate);
+      dtStart.setHours(parseInt(startHH, 10), parseInt(startMM, 10), 0, 0);
+      const dtEnd = new Date(dtStart.getTime() + (assign.durationMinutes ?? 60) * 60 * 1000);
+
+      cal.createEvent({
+        id: `${assign.id}@roamera.in`,
+        start: dtStart,
+        end: dtEnd,
+        summary: place.name,
+        description: assign.notes ?? undefined,
+        location: place.address ?? undefined,
+        status: 'CONFIRMED' as any,
+      });
+    }
+
+    for (const res_ of resRows) {
+      if (!res_.startTime) continue;
+      const day = daysList.find((d) => d.id === res_.dayId);
+      if (!day) continue;
+      const baseDate = day.date
+        ? (day.date instanceof Date ? day.date : new Date((day.date as number) * 1000))
+        : new Date();
+      const [sh = '09', sm = '00'] = res_.startTime.split(':');
+      const start = new Date(baseDate);
+      start.setHours(parseInt(sh, 10), parseInt(sm, 10), 0, 0);
+      const end = res_.endTime ? (() => {
+        const [eh = '10', em = '00'] = res_.endTime!.split(':');
+        const d = new Date(baseDate);
+        d.setHours(parseInt(eh, 10), parseInt(em, 10), 0, 0);
+        return d;
+      })() : new Date(start.getTime() + 60 * 60 * 1000);
+
+      cal.createEvent({
+        id: `res-${res_.id}@roamera.in`,
+        start,
+        end,
+        summary: `[${res_.type.toUpperCase()}] ${res_.name ?? res_.type}`,
+        description: res_.notes ?? undefined,
+        status: 'CONFIRMED' as any,
+      });
+    }
+
+    res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${trip.title.replace(/[^\w]/g, '_')}.ics"`);
+    res.send(cal.toString());
+  } catch (err) { next(err); }
+});
+
+// ─── PDF EXPORT ────────────────────────────────────────────────────
+
+router.get('/:tripId/export/pdf', authenticate, async (req: AuthRequest, res, next) => {
+  try {
+    const tripId = req.params.tripId as string;
+    const role = await getMemberRole(tripId, req.user!.id);
+    if (!role) throw new AppError('Trip not found', 404);
+
+    const trip = await db.query.trips.findFirst({ where: (t, { eq: e }) => e(t.id, tripId) });
+    if (!trip) throw new AppError('Trip not found', 404);
+
+    const daysList = await db.query.days.findMany({
+      where: (t, { eq: e }) => e(t.tripId, tripId),
+      orderBy: (t) => asc(t.dayNumber),
+    });
+    const placesList = await db.query.places.findMany({
+      where: (t, { eq: e }) => e(t.tripId, tripId),
+    });
+    const resRows = await db.select().from(reservations).where(eq(reservations.tripId, String(tripId)));
+    const assignments = await db.query.dayAssignments.findMany({
       where: (t, { eq: e }) => e(t.tripId, tripId),
     });
 
     const placeMap = new Map(placesList.map((p) => [p.id, p]));
+    const assignByDay = new Map<string, typeof assignments>();
+    for (const a of assignments) {
+      if (!assignByDay.has(a.dayId)) assignByDay.set(a.dayId, []);
+      assignByDay.get(a.dayId)!.push(a);
+    }
+    const resByDay = new Map<string, typeof resRows>();
+    for (const r of resRows) {
+      if (!r.dayId) continue;
+      if (!resByDay.has(r.dayId)) resByDay.set(r.dayId, []);
+      resByDay.get(r.dayId)!.push(r);
+    }
 
-    const now = new Date().toISOString().replace(/[-:.]/g, '').slice(0, 15) + 'Z';
+    const formatDate = (d: Date | number | null): string => {
+      if (!d) return '';
+      const date = d instanceof Date ? d : new Date((d as number) * 1000);
+      return date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    };
 
-    const events = assignments
-      .map((assign) => {
-        const day = daysList.find((d) => d.id === assign.dayId);
-        const place = placeMap.get(assign.placeId);
-        if (!day || !place) return null;
+    const content: any[] = [
+      { text: trip.title, style: 'header' },
+      {
+        text: [
+          trip.dateFrom ? formatDate(trip.dateFrom as any) : '',
+          trip.dateTo ? ` → ${formatDate(trip.dateTo as any)}` : '',
+        ].join(''),
+        style: 'subheader',
+        margin: [0, 4, 0, 16],
+      },
+    ];
 
-        const baseDate = day.date
-          ? (day.date instanceof Date ? day.date : new Date((day.date as number) * 1000))
-          : (trip.dateFrom ? (trip.dateFrom instanceof Date ? trip.dateFrom : new Date((trip.dateFrom as number) * 1000)) : new Date());
+    for (const day of daysList) {
+      const dayAssigns = (assignByDay.get(day.id) ?? []).sort((a, b) => a.orderIndex - b.orderIndex);
+      const dayRes = resByDay.get(day.id) ?? [];
 
-        const [startHH = '10', startMM = '00'] = (assign.placeTime ?? '10:00').split(':');
-        const dtStart = new Date(baseDate);
-        dtStart.setHours(parseInt(startHH, 10), parseInt(startMM, 10), 0, 0);
-        const dtEnd = new Date(dtStart.getTime() + (assign.durationMinutes ?? 60) * 60 * 1000);
+      content.push({ text: `Day ${day.dayNumber}${day.title ? ` — ${day.title}` : ''}`, style: 'dayHeader', margin: [0, 12, 0, 4] });
 
-        const fmt = (d: Date) => d.toISOString().replace(/[-:.]/g, '').slice(0, 15) + 'Z';
+      if (dayAssigns.length > 0) {
+        content.push({ text: 'Places', style: 'sectionLabel', margin: [0, 4, 0, 2] });
+        for (const a of dayAssigns) {
+          const place = placeMap.get(a.placeId);
+          if (!place) continue;
+          content.push({
+            text: `• ${place.name}${a.placeTime ? ` (${a.placeTime})` : ''}${place.address ? ` — ${place.address}` : ''}`,
+            margin: [8, 2, 0, 0],
+          });
+          if (a.notes) content.push({ text: `  ${a.notes}`, style: 'note', margin: [16, 0, 0, 4] });
+        }
+      }
 
-        return [
-          'BEGIN:VEVENT',
-          `UID:${assign.id}@roamera.in`,
-          `DTSTAMP:${now}`,
-          `DTSTART:${fmt(dtStart)}`,
-          `DTEND:${fmt(dtEnd)}`,
-          `SUMMARY:${place.name}`,
-          assign.notes ? `DESCRIPTION:${assign.notes.replace(/\n/g, '\\n')}` : '',
-          place.address ? `LOCATION:${place.address}` : '',
-          'END:VEVENT',
-        ].filter(Boolean).join('\r\n');
-      })
-      .filter(Boolean);
+      if (dayRes.length > 0) {
+        content.push({ text: 'Reservations', style: 'sectionLabel', margin: [0, 4, 0, 2] });
+        for (const r of dayRes) {
+          content.push({
+            text: `• [${r.type.toUpperCase()}] ${r.name ?? r.type}${r.startTime ? ` at ${r.startTime}` : ''}${r.confirmation ? ` (Ref: ${r.confirmation})` : ''}`,
+            margin: [8, 2, 0, 0],
+          });
+          if (r.notes) content.push({ text: `  ${r.notes}`, style: 'note', margin: [16, 0, 0, 4] });
+        }
+      }
+    }
 
-    const ics = [
-      'BEGIN:VCALENDAR',
-      'VERSION:2.0',
-      'PRODID:-//Roamera//Trip Planner//EN',
-      `X-WR-CALNAME:${trip.title}`,
-      ...events,
-      'END:VCALENDAR',
-    ].join('\r\n');
+    const docDefinition = {
+      content,
+      defaultStyle: { fontSize: 11, font: 'Helvetica' },
+      styles: {
+        header: { fontSize: 22, bold: true, color: '#0D9488' },
+        subheader: { fontSize: 13, color: '#555' },
+        dayHeader: { fontSize: 15, bold: true, color: '#0D9488' },
+        sectionLabel: { fontSize: 12, bold: true, color: '#333' },
+        note: { fontSize: 10, color: '#666', italics: true },
+      },
+    };
 
-    res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename="${trip.title.replace(/[^\w]/g, '_')}.ics"`);
-    res.send(ics);
+    const pdfDoc = pdfmakeLib.createPdf(docDefinition as any);
+    const buffer: Buffer = await pdfDoc.getBuffer();
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${trip.title.replace(/[^\w]/g, '_')}.pdf"`);
+    res.send(buffer);
+  } catch (err) { next(err); }
+});
+
+// ─── Reservations ──────────────────────────────────────────────────────────
+
+router.get('/:tripId/reservations', authenticate, async (req: AuthRequest, res, next) => {
+  try {
+    const tripId = String(req.params.tripId);
+    const role = await getMemberRole(tripId, req.user!.id);
+    if (!role) throw new AppError('Not a trip member', 403);
+    const rows = await db.select().from(reservations)
+      .where(eq(reservations.tripId, tripId))
+      .orderBy(asc(reservations.startTime));
+    res.json(rows);
+  } catch (err) { next(err); }
+});
+
+router.post('/:tripId/reservations', authenticate, async (req: AuthRequest, res, next) => {
+  try {
+    const tripId = String(req.params.tripId);
+    const role = await getMemberRole(tripId, req.user!.id);
+    if (!role || ROLE_LEVEL[role] < ROLE_LEVEL['editor']) throw new AppError('Forbidden', 403);
+    const { type, name, dayId, placeId, startTime, endTime, confirmation, notes, status } = req.body;
+    if (!type) throw new AppError('type is required', 400);
+    const id = crypto.randomUUID();
+    await db.insert(reservations).values({
+      id, tripId: String(tripId), type, name: name ?? null, dayId: dayId ?? null, placeId: placeId ?? null,
+      startTime: startTime ?? null, endTime: endTime ?? null,
+      confirmation: confirmation ?? null, notes: notes ?? null,
+      status: status ?? 'confirmed',
+    } as any);
+    const row = await db.select().from(reservations).where(eq(reservations.id, id));
+    res.status(201).json(row[0]);
+  } catch (err) { next(err); }
+});
+
+router.patch('/:tripId/reservations/:id', authenticate, async (req: AuthRequest, res, next) => {
+  try {
+    const tripId = String(req.params.tripId);
+    const { id } = req.params;
+    const role = await getMemberRole(tripId, req.user!.id);
+    if (!role || ROLE_LEVEL[role] < ROLE_LEVEL['editor']) throw new AppError('Forbidden', 403);
+    const { type, name, dayId, placeId, startTime, endTime, confirmation, notes, status } = req.body;
+    await db.update(reservations).set({
+      ...(type !== undefined && { type }),
+      ...(name !== undefined && { name }),
+      ...(dayId !== undefined && { dayId }),
+      ...(placeId !== undefined && { placeId }),
+      ...(startTime !== undefined && { startTime }),
+      ...(endTime !== undefined && { endTime }),
+      ...(confirmation !== undefined && { confirmation }),
+      ...(notes !== undefined && { notes }),
+      ...(status !== undefined && { status }),
+    }).where(and(eq(reservations.id, String(id)), eq(reservations.tripId, tripId)));
+    const row = await db.select().from(reservations).where(eq(reservations.id, String(id)));
+    res.json(row[0] ?? null);
+  } catch (err) { next(err); }
+});
+
+router.delete('/:tripId/reservations/:id', authenticate, async (req: AuthRequest, res, next) => {
+  try {
+    const tripId = String(req.params.tripId);
+    const id = String(req.params.id);
+    const role = await getMemberRole(tripId, req.user!.id);
+    if (!role || ROLE_LEVEL[role] < ROLE_LEVEL['editor']) throw new AppError('Forbidden', 403);
+    await db.delete(reservations).where(and(eq(reservations.id, id), eq(reservations.tripId, tripId)));
+    res.status(204).end();
+  } catch (err) { next(err); }
+});
+
+// ─── Accommodations ────────────────────────────────────────────────────────
+
+router.get('/:tripId/accommodations', authenticate, async (req: AuthRequest, res, next) => {
+  try {
+    const tripId = String(req.params.tripId);
+    const role = await getMemberRole(tripId, req.user!.id);
+    if (!role) throw new AppError('Not a trip member', 403);
+    const rows = await db.select().from(accommodations).where(eq(accommodations.tripId, tripId));
+    res.json(rows);
+  } catch (err) { next(err); }
+});
+
+router.post('/:tripId/accommodations', authenticate, async (req: AuthRequest, res, next) => {
+  try {
+    const tripId = String(req.params.tripId);
+    const role = await getMemberRole(tripId, req.user!.id);
+    if (!role || ROLE_LEVEL[role] < ROLE_LEVEL['editor']) throw new AppError('Forbidden', 403);
+    const { placeId, checkinDayId, checkoutDayId, checkinTime, checkoutTime, confirmation, notes } = req.body;
+    const id = crypto.randomUUID();
+    await db.insert(accommodations).values({
+      id, tripId: String(tripId),
+      placeId: placeId ?? null,
+      checkinDayId: checkinDayId ?? null,
+      checkoutDayId: checkoutDayId ?? null,
+      checkinTime: checkinTime ?? null,
+      checkoutTime: checkoutTime ?? null,
+      confirmation: confirmation ?? null,
+      notes: notes ?? null,
+    } as any);
+    const row = await db.select().from(accommodations).where(eq(accommodations.id, id));
+    res.status(201).json(row[0]);
+  } catch (err) { next(err); }
+});
+
+router.patch('/:tripId/accommodations/:id', authenticate, async (req: AuthRequest, res, next) => {
+  try {
+    const tripId = String(req.params.tripId);
+    const { id } = req.params;
+    const role = await getMemberRole(tripId, req.user!.id);
+    if (!role || ROLE_LEVEL[role] < ROLE_LEVEL['editor']) throw new AppError('Forbidden', 403);
+    const { placeId, checkinDayId, checkoutDayId, checkinTime, checkoutTime, confirmation, notes } = req.body;
+    await db.update(accommodations).set({
+      ...(placeId !== undefined && { placeId }),
+      ...(checkinDayId !== undefined && { checkinDayId }),
+      ...(checkoutDayId !== undefined && { checkoutDayId }),
+      ...(checkinTime !== undefined && { checkinTime }),
+      ...(checkoutTime !== undefined && { checkoutTime }),
+      ...(confirmation !== undefined && { confirmation }),
+      ...(notes !== undefined && { notes }),
+    }).where(and(eq(accommodations.id, String(id)), eq(accommodations.tripId, tripId)));
+    const row = await db.select().from(accommodations).where(eq(accommodations.id, String(id)));
+    res.json(row[0] ?? null);
+  } catch (err) { next(err); }
+});
+
+router.delete('/:tripId/accommodations/:id', authenticate, async (req: AuthRequest, res, next) => {
+  try {
+    const tripId = String(req.params.tripId);
+    const id = String(req.params.id);
+    const role = await getMemberRole(tripId, req.user!.id);
+    if (!role || ROLE_LEVEL[role] < ROLE_LEVEL['editor']) throw new AppError('Forbidden', 403);
+    await db.delete(accommodations).where(and(eq(accommodations.id, id), eq(accommodations.tripId, tripId)));
+    res.status(204).end();
+  } catch (err) { next(err); }
+});
+
+// ─── Offline Bundle ────────────────────────────────────────────────────────
+
+router.get('/:tripId/bundle', authenticate, async (req: AuthRequest, res, next) => {
+  try {
+    const tripId = String(req.params.tripId);
+    const role = await getMemberRole(tripId, req.user!.id);
+    if (!role) throw new AppError('Not a trip member', 403);
+
+    const [tripRow] = await db.select().from(trips).where(eq(trips.id, tripId));
+    if (!tripRow) throw new AppError('Trip not found', 404);
+
+    const [daysRows, placesRows, membersRows, resRows, accomRows] = await Promise.all([
+      db.select().from(days).where(eq(days.tripId, tripId)).orderBy(asc(days.dayNumber)),
+      db.select().from(places).where(eq(places.tripId, tripId)),
+      db.select().from(tripMembers).where(eq(tripMembers.tripId, tripId)),
+      db.select().from(reservations).where(eq(reservations.tripId, tripId)),
+      db.select().from(accommodations).where(eq(accommodations.tripId, tripId)),
+    ]);
+
+    res.json({
+      trip: tripRow,
+      days: daysRows,
+      places: placesRows,
+      members: membersRows,
+      reservations: resRows,
+      accommodations: accomRows,
+      bundledAt: new Date().toISOString(),
+    });
   } catch (err) { next(err); }
 });
 

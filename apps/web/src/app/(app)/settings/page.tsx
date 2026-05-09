@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Moon, Sun, Monitor } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import { UpdateProfileSchema, type UpdateProfileInput } from '@roamera/types';
 import { useAuthStore } from '@/lib/auth-store';
 import { AvatarUpload } from '@/components/avatar-upload';
@@ -26,6 +27,7 @@ export default function SettingsPage() {
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
   const [loading, setLoading] = useState(false);
+  const { theme, setTheme } = useTheme();
 
   const { register, handleSubmit, setValue, watch } = useForm<UpdateProfileInput>({
     resolver: zodResolver(UpdateProfileSchema),
@@ -145,6 +147,72 @@ export default function SettingsPage() {
             Save changes
           </button>
         </form>
+
+        {/* Language Switcher */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 mt-6">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Language</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {[
+              { code: 'en', label: 'English', flag: '🇬🇧' },
+              { code: 'hi', label: 'हिंदी', flag: '🇮🇳' },
+              { code: 'fr', label: 'Français', flag: '🇫🇷' },
+              { code: 'es', label: 'Español', flag: '🇪🇸' },
+              { code: 'de', label: 'Deutsch', flag: '🇩🇪' },
+            ].map(({ code, label, flag }) => (
+              <button
+                key={code}
+                type="button"
+                onClick={() => {
+                  document.cookie = `NEXT_LOCALE=${code}; path=/; max-age=31536000`;
+                  window.location.reload();
+                }}
+                className="flex items-center gap-2 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-medium hover:border-teal-500 hover:text-teal-600 transition"
+              >
+                <span className="text-lg">{flag}</span>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Theme */}
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-6">
+          <h2 className="text-lg font-semibold mb-4">Appearance</h2>
+          <p className="text-sm text-slate-500 mb-4">Choose how Roamera looks on your device</p>
+          <div className="flex gap-3">
+            {[
+              { key: 'light', label: 'Light', icon: Sun },
+              { key: 'dark', label: 'Dark', icon: Moon },
+              { key: 'system', label: 'System', icon: Monitor },
+            ].map(({ key, label, icon: Icon }) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setTheme(key)}
+                className={`flex-1 flex flex-col items-center gap-2 px-4 py-3 rounded-xl border text-sm font-medium transition ${
+                  theme === key
+                    ? 'border-teal-500 text-teal-600 bg-teal-50 dark:bg-teal-900/20'
+                    : 'border-slate-200 dark:border-slate-700 hover:border-teal-300'
+                }`}
+              >
+                <Icon className="w-5 h-5" />
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* MCP Tokens */}
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-6">
+          <h2 className="text-lg font-semibold mb-2">AI Assistant Integration</h2>
+          <p className="text-sm text-slate-500 mb-4">Connect Claude Desktop or other AI tools via the Model Context Protocol</p>
+          <a
+            href="/settings/mcp"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-teal-600 text-white text-sm font-medium hover:bg-teal-700 transition"
+          >
+            Manage MCP Tokens →
+          </a>
+        </div>
       </div>
     </div>
   );

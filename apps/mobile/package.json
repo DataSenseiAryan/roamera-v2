@@ -13,11 +13,17 @@
     "lint": "eslint . --ext .ts,.tsx"
   },
   "dependencies": {
+    "@react-native-community/netinfo": "^12.0.1",
     "@roamera/sdk": "workspace:*",
     "@roamera/types": "workspace:*",
     "@tanstack/react-query": "^5.75.2",
     "axios": "^1.9.0",
+    "dexie": "^4.4.2",
     "expo": "~53.0.9",
+    "expo-device": "^55.0.16",
+    "expo-haptics": "^55.0.14",
+    "expo-linking": "^55.0.15",
+    "expo-notifications": "^55.0.22",
     "expo-router": "~4.0.17",
     "expo-secure-store": "~14.0.1",
     "expo-status-bar": "~2.2.3",

@@ -1,0 +1,81 @@
+{
+  "nav": {
+    "home": "Inicio",
+    "trips": "Viajes",
+    "aiPlanner": "Planificador IA",
+    "travel": "Viaje",
+    "circles": "Círculos",
+    "justsplit": "JustSplit",
+    "journeys": "Diarios",
+    "atlas": "Atlas",
+    "settings": "Ajustes",
+    "admin": "Admin",
+    "signOut": "Cerrar sesión"
+  },
+  "common": {
+    "loading": "Cargando...",
+    "error": "Algo salió mal",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "add": "Agregar",
+    "close": "Cerrar",
+    "confirm": "Confirmar",
+    "back": "Volver",
+    "search": "Buscar",
+    "noResults": "Sin resultados",
+    "required": "Este campo es obligatorio"
+  },
+  "auth": {
+    "signIn": "Iniciar sesión",
+    "signUp": "Crear cuenta",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "noAccount": "¿No tienes cuenta?",
+    "hasAccount": "¿Ya tienes cuenta?",
+    "continueWith": "Continuar con",
+    "verifyEmail": "Verifica tu correo",
+    "otpSent": "Se envió un código a tu correo",
+    "enterOtp": "Ingresa el código"
+  },
+  "trips": {
+    "myTrips": "Mis viajes",
+    "newTrip": "Nuevo viaje",
+    "noTrips": "Sin viajes aún. ¡Empieza a planificar!",
+    "itinerary": "Itinerario",
+    "budget": "Presupuesto",
+    "packing": "Equipaje",
+    "collab": "Colaboración",
+    "reservations": "Reservas",
+    "stays": "Alojamientos",
+    "files": "Archivos",
+    "members": "Miembros",
+    "share": "Compartir",
+    "export": "Exportar",
+    "exportICS": "Exportar ICS",
+    "exportPDF": "Exportar PDF",
+    "addDay": "Agregar día",
+    "addPlace": "Agregar lugar",
+    "noReservations": "Sin reservas aún.",
+    "noAccommodations": "Sin alojamientos agregados aún.",
+    "noFiles": "Sin archivos subidos aún."
+  },
+  "settings": {
+    "title": "Ajustes",
+    "account": "Cuenta",
+    "notifications": "Notificaciones",
+    "language": "Idioma",
+    "selectLanguage": "Seleccionar idioma",
+    "theme": "Tema",
+    "darkMode": "Modo oscuro",
+    "saveChanges": "Guardar cambios"
+  },
+  "offline": {
+    "title": "Estás sin conexión",
+    "description": "No se detectó conexión a internet. Parte del contenido puede estar disponible desde el caché.",
+    "tryAgain": "Intentar de nuevo",
+    "viewCachedTrips": "Ver viajes en caché"
+  }
+}
