@@ -42,7 +42,7 @@ export default function LandingPage() {
         {/* Status badge */}
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-sm font-medium">
           <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-          S1–S7 live: Auth · Moments · AI Planner · Trip Planner · Budget · Packing · Circles · JustSplit
+          S1–S8 live: Auth · Moments · AI Planner · Trip Planner · Budget · Packing · Circles · JustSplit · Journeys · Atlas
         </div>
 
         {/* Feature pills */}

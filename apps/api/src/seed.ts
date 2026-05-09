@@ -42,6 +42,11 @@ import {
   expenses,
   expenseSplits,
   groupSettlements,
+  journeys,
+  journeyEntries,
+  journeyContributors,
+  visitedCountries,
+  userBadges,
 } from './db/schema';
 
 const PASSWORD = 'password123';
@@ -916,6 +921,159 @@ async function seed() {
     }
   } else {
     console.log('  JustSplit groups already seeded — skipping Sprint 7');
+  }
+
+  // ── Sprint 8: Journey Magazine, Atlas, Gamification ─────────────────────────
+  const s8Exists = await db.query.journeys.findFirst({
+    where: (t, { eq: e }) => e(t.title, 'Rajasthan Heritage Journal'),
+  });
+
+  if (!s8Exists) {
+    const aryaUser = await db.query.users.findFirst({
+      where: (t, { eq: e }) => e(t.username, 'arya_explorer'),
+    });
+    const marcoUser = await db.query.users.findFirst({
+      where: (t, { eq: e }) => e(t.username, 'marco_travels'),
+    });
+    const leoUser = await db.query.users.findFirst({
+      where: (t, { eq: e }) => e(t.username, 'leo_backpacker'),
+    });
+
+    if (aryaUser && marcoUser && leoUser) {
+      // Arya's journey
+      const aryaJourneyId = crypto.randomUUID();
+      await db.insert(journeys).values({
+        id: aryaJourneyId,
+        userId: aryaUser.id,
+        title: 'Rajasthan Heritage Journal',
+        description: 'A fortnight through the palaces, deserts, and bazaars of Rajasthan.',
+        layoutPref: 'magazine',
+        isPublic: true,
+        shareToken: 'demo-rajasthan-share-token',
+      });
+      await db.insert(journeyContributors).values({ journeyId: aryaJourneyId, userId: aryaUser.id, role: 'owner' });
+      await db.insert(journeyContributors).values({ journeyId: aryaJourneyId, userId: leoUser.id, role: 'contributor' });
+
+      const entries = [
+        {
+          title: 'Arrival in Jaipur',
+          contentJson: [
+            { type: 'heading', text: 'Day 1 — The Pink City' },
+            { type: 'text', text: 'We landed at Jaipur International Airport as the sun was setting, casting a rosy hue over the city...' },
+            { type: 'quote', text: 'Travel is the only thing you buy that makes you richer.' },
+          ],
+          orderIndex: 0,
+        },
+        {
+          title: 'Amber Fort',
+          contentJson: [
+            { type: 'heading', text: 'Day 2 — Amber Fort & City Palace' },
+            { type: 'text', text: 'The Amber Fort perches majestically on a hilltop, its corridors echoing centuries of Rajput history...' },
+          ],
+          orderIndex: 1,
+        },
+        {
+          title: 'Desert Safari',
+          contentJson: [
+            { type: 'heading', text: 'Day 5 — Jaisalmer Desert Camp' },
+            { type: 'text', text: 'Camel dunes, starlit skies, and folk music under a crescent moon...' },
+            { type: 'divider' },
+            { type: 'text', text: 'The Thar desert is unlike anything I have ever seen.' },
+          ],
+          orderIndex: 2,
+        },
+        {
+          title: 'Udaipur Lakes',
+          contentJson: [
+            { type: 'heading', text: 'Day 9 — City of Lakes' },
+            { type: 'text', text: 'Udaipur lives up to every superlative. Lake Pichola shimmers at sunset...' },
+          ],
+          orderIndex: 3,
+        },
+      ];
+
+      for (const entry of entries) {
+        await db.insert(journeyEntries).values({
+          id: crypto.randomUUID(),
+          journeyId: aryaJourneyId,
+          title: entry.title,
+          contentJson: entry.contentJson,
+          orderIndex: entry.orderIndex,
+        });
+      }
+
+      // Marco's journey
+      const marcoJourneyId = crypto.randomUUID();
+      await db.insert(journeys).values({
+        id: marcoJourneyId,
+        userId: marcoUser.id,
+        title: 'Goa Beach Diary',
+        description: 'Sun, waves, and shacks — a week in Goa.',
+        layoutPref: 'magazine',
+        isPublic: false,
+      });
+      await db.insert(journeyContributors).values({ journeyId: marcoJourneyId, userId: marcoUser.id, role: 'owner' });
+
+      const marcoEntries = [
+        { title: 'Baga Beach', contentJson: [{ type: 'heading', text: 'Day 1 — Baga at Sunrise' }, { type: 'text', text: 'The shacks were just opening and the beach was empty...' }], orderIndex: 0 },
+        { title: 'Dudhsagar Falls', contentJson: [{ type: 'heading', text: 'Day 3 — Into the Jungle' }, { type: 'text', text: 'A rickety jeep, dense forests, and the roar of Dudhsagar...' }], orderIndex: 1 },
+        { title: 'Old Goa', contentJson: [{ type: 'heading', text: 'Day 5 — Colonial Heritage' }, { type: 'text', text: 'The Basilica of Bom Jesus holds the relics of St. Francis Xavier...' }], orderIndex: 2 },
+      ];
+
+      for (const entry of marcoEntries) {
+        await db.insert(journeyEntries).values({
+          id: crypto.randomUUID(),
+          journeyId: marcoJourneyId,
+          title: entry.title,
+          contentJson: entry.contentJson,
+          orderIndex: entry.orderIndex,
+        });
+      }
+
+      // Visited countries — arya (8 countries: India, Thailand, Japan, Nepal, Sri Lanka, Indonesia, Vietnam, Malaysia)
+      const aryaCountries = ['IN', 'TH', 'JP', 'NP', 'LK', 'ID', 'VN', 'MY'];
+      for (const code of aryaCountries) {
+        await db.insert(visitedCountries).values({
+          id: crypto.randomUUID(),
+          userId: aryaUser.id,
+          countryCode: code,
+        }).onConflictDoNothing();
+      }
+
+      // Visited countries — marco (5 countries: India, Brazil, Portugal, Spain, France)
+      const marcoCountries = ['IN', 'BR', 'PT', 'ES', 'FR'];
+      for (const code of marcoCountries) {
+        await db.insert(visitedCountries).values({
+          id: crypto.randomUUID(),
+          userId: marcoUser.id,
+          countryCode: code,
+        }).onConflictDoNothing();
+      }
+
+      // Badges — arya: first_post, first_journey, five_countries, first_trip
+      const aryaBadges = ['first_post', 'first_journey', 'five_countries', 'first_trip'];
+      for (const badgeType of aryaBadges) {
+        await db.insert(userBadges).values({
+          id: crypto.randomUUID(),
+          userId: aryaUser.id,
+          badgeType,
+        }).onConflictDoNothing();
+      }
+
+      // Badges — marco: first_post, five_countries, first_trip, first_journey
+      const marcoBadges = ['first_post', 'five_countries', 'first_trip', 'first_journey'];
+      for (const badgeType of marcoBadges) {
+        await db.insert(userBadges).values({
+          id: crypto.randomUUID(),
+          userId: marcoUser.id,
+          badgeType,
+        }).onConflictDoNothing();
+      }
+
+      console.log('  Seeded Sprint 8 demo (Journeys, Atlas, Gamification)');
+    }
+  } else {
+    console.log('  Journeys already seeded — skipping Sprint 8');
   }
 
   console.log('Seed complete!');

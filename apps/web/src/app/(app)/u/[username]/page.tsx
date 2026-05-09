@@ -1,8 +1,8 @@
 'use client';
 
 import { use, useState, useCallback } from 'react';
-import { MapPin, Globe } from 'lucide-react';
-import { useUserQuery, useUserPostsQuery, useSavePost, useUnsavePost, getApiClient } from '@roamera/sdk';
+import { MapPin, Globe, Medal, BarChart2, Camera } from 'lucide-react';
+import { useUserQuery, useUserPostsQuery, useSavePost, useUnsavePost, getApiClient, useBadges, useTravelStats } from '@roamera/sdk';
 import { useQueryClient } from '@tanstack/react-query';
 import type { ReactionType } from '@roamera/types';
 import { useAuthStore } from '@/lib/auth-store';
@@ -108,7 +108,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
         )}
       </div>
 
-      <UserPosts userId={profile.id} />
+      <ProfileTabs userId={profile.id} isOwn={isOwnProfile} />
 
       {modal && (
         <FollowersModal
@@ -117,6 +117,132 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
           onClose={() => setModal(null)}
         />
       )}
+    </div>
+  );
+}
+
+function ProfileTabs({ userId, isOwn }: { userId: string; isOwn: boolean }) {
+  const [tab, setTab] = useState<'posts' | 'badges' | 'stats'>('posts');
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-1 bg-white dark:bg-slate-900 rounded-2xl p-1.5 shadow-card">
+        {[
+          { id: 'posts', label: 'Moments', icon: Camera },
+          { id: 'badges', label: 'Badges', icon: Medal },
+          { id: 'stats', label: 'Stats', icon: BarChart2 },
+        ].map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            onClick={() => setTab(id as 'posts' | 'badges' | 'stats')}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-medium transition-colors ${
+              tab === id
+                ? 'bg-primary-600 text-white'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+            }`}
+          >
+            <Icon className="h-4 w-4" />
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'posts' && <UserPosts userId={userId} />}
+      {tab === 'badges' && <UserBadgesPanel isOwn={isOwn} />}
+      {tab === 'stats' && <UserStatsPanel isOwn={isOwn} />}
+    </div>
+  );
+}
+
+function UserBadgesPanel({ isOwn }: { isOwn: boolean }) {
+  const { data: badges, isLoading } = useBadges();
+
+  if (!isOwn) {
+    return (
+      <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-card text-center text-slate-400 dark:text-slate-500 text-sm italic">
+        Badges are visible to profile owner only.
+      </div>
+    );
+  }
+
+  if (isLoading) return (
+    <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-card flex justify-center">
+      <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary-600 border-t-transparent" />
+    </div>
+  );
+
+  if (!badges || badges.length === 0) {
+    return (
+      <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-card text-center">
+        <Medal className="h-12 w-12 mx-auto text-slate-300 dark:text-slate-600 mb-3" />
+        <p className="text-slate-500 dark:text-slate-400">No badges yet. Keep exploring!</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 shadow-card">
+      <h3 className="font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+        <Medal className="h-4 w-4 text-amber-500" />
+        Badges Earned ({badges.length})
+      </h3>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        {badges.map((badge) => (
+          <div
+            key={badge.id}
+            className="flex flex-col items-center text-center p-3 rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800"
+          >
+            <span className="text-2xl mb-1">{badge.icon}</span>
+            <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{badge.name}</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{badge.description}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function UserStatsPanel({ isOwn }: { isOwn: boolean }) {
+  const { data: stats, isLoading } = useTravelStats();
+
+  if (!isOwn) {
+    return (
+      <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-card text-center text-slate-400 dark:text-slate-500 text-sm italic">
+        Stats are visible to profile owner only.
+      </div>
+    );
+  }
+
+  if (isLoading) return (
+    <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-card flex justify-center">
+      <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary-600 border-t-transparent" />
+    </div>
+  );
+
+  if (!stats) return null;
+
+  const statItems = [
+    { label: 'Moments', value: stats.posts, emoji: '📸' },
+    { label: 'Trips', value: stats.trips, emoji: '✈️' },
+    { label: 'Countries', value: stats.countries, emoji: '🌍' },
+    { label: 'Badges', value: stats.badges, emoji: '🏅' },
+  ];
+
+  return (
+    <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 shadow-card">
+      <h3 className="font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+        <BarChart2 className="h-4 w-4 text-teal-500" />
+        Travel Stats
+      </h3>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {statItems.map((item) => (
+          <div key={item.label} className="text-center p-3 rounded-xl bg-teal-50 dark:bg-teal-900/10 border border-teal-100 dark:border-teal-800">
+            <div className="text-2xl mb-1">{item.emoji}</div>
+            <div className="text-2xl font-bold text-slate-900 dark:text-white">{item.value}</div>
+            <div className="text-xs text-slate-500 dark:text-slate-400">{item.label}</div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

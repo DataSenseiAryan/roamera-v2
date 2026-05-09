@@ -295,7 +295,7 @@ hashtags[], itinerary_json
 
 ---
 
-## 8. Journey Magazine — `/api/v1/journeys`
+## 8. Journey Magazine — `/api/v1/journeys` ✅ Implemented (S8)
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
@@ -318,7 +318,7 @@ hashtags[], itinerary_json
 
 ---
 
-## 9. Atlas — `/api/v1/atlas`
+## 9. Atlas — `/api/v1/atlas` ✅ Implemented (S8)
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
@@ -331,7 +331,7 @@ hashtags[], itinerary_json
 
 ---
 
-## 10. Gamification — `/api/v1/gamification`
+## 10. Gamification — `/api/v1/gamification` ✅ Implemented (S8)
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|

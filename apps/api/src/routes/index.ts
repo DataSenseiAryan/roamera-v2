@@ -12,6 +12,9 @@ import travelRouter from './travel';
 import tripsRouter from './trips';
 import circlesRouter from './circles';
 import expensesRouter from './expenses';
+import journeysRouter from './journeys';
+import atlasRouter from './atlas';
+import gamificationRouter from './gamification';
 import mapsRouter from './maps';
 import weatherRouter from './weather';
 import { adminRouter as adminPackingRouter, publicRouter as publicPackingTemplatesRouter } from './admin-packing';
@@ -51,10 +54,10 @@ router.use('/api/v1/circles', circlesRouter);
 // Sprint 7: JustSplit (added in S7)
 router.use('/api/v1/expenses', expensesRouter);
 
-// Sprint 8: Journey + Atlas (added in S8)
-// router.use('/api/v1/journeys', journeysRouter);
-// router.use('/api/v1/atlas', atlasRouter);
-// router.use('/api/v1/gamification', gamificationRouter);
+// Sprint 8: Journey + Atlas + Gamification
+router.use('/api/v1/journeys', journeysRouter);
+router.use('/api/v1/atlas', atlasRouter);
+router.use('/api/v1/gamification', gamificationRouter);
 
 // Sprint 9: Notifications + Admin
 // router.use('/api/v1/notifications', notificationsRouter);

@@ -301,8 +301,9 @@ All password: `password123`
 | S5 | Budget & Packing | ✅ Done — see `docs/plans/sprint-5-budget-packing.md` |
 | S6 | Circles & Collab | ✅ Done — see `docs/plans/sprint-6-circles-collab.md` |
 | S7 | JustSplit | ✅ Done — see `docs/plans/sprint-7-justsplit.md` |
+| S8 | Journey & Atlas | ✅ Done — see `docs/plans/sprint-8-journey-atlas.md` |
 
-**Current as-built notes (S1–S6):**
+**Current as-built notes (S1–S8):**
 - **WebSocket**: `WsManager` class in `apps/api/src/lib/ws.ts` — token auth, room subscriptions, broadcast. Wire: `GET /api/v1/auth/ws-token` → connect WS → subscribe to `trip:{id}` room.
 - **Trip Planner**: Full CRUD for trips, days, places, assignments, notes. WS broadcast on every mutation. Maps (Nominatim/Overpass) + weather (Open-Meteo) proxy routes with cache.
 - **Drag-drop**: `@dnd-kit/core` + `@dnd-kit/sortable` for reorder within day + cross-day move.
@@ -319,3 +320,6 @@ All password: `password123`
 - **Circles (S6)**: Travel groups at `/api/v1/circles`. Real-time chat, emoji reactions, polls. WS room `circle:{id}`. Members: join/leave/invite/remove.
 - **Trip Collab (S6)**: In-trip chat + notes + polls at `/api/v1/trips/:tripId/collab`. WS room `trip:{id}`. Notes support pin/unpin.
 - **JustSplit (S7)**: Standalone expense splitting at `/api/v1/expenses`. Multi-currency, equal/weighted/exact splits, greedy debt simplification.
+- **Journey Magazine (S8)**: Block-based travel journals at `/api/v1/journeys`. Rich content JSON (heading/text/photo/quote/divider), public share tokens, contributors. Web: `/journeys` list, `/journeys/[id]` editor, `/journeys/public/[token]` public view.
+- **Atlas (S8)**: Visited countries tracking at `/api/v1/atlas`. 195-country ISO dataset, stats (% of world, continent breakdown). Web: `/atlas` page with continent map visual + search.
+- **Gamification (S8)**: Badge engine in `apps/api/src/lib/badges.ts` (8 badge types). Awards on post, journey, trip, country visit. `/api/v1/gamification/badges|stats|leaderboard`. Profile: Badges tab + Stats tab.

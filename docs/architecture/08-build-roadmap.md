@@ -21,10 +21,10 @@
 | S5 | Budget & Packing | 11–12 | Budget tracker, splits, packing lists, bags, templates | ✅ Done |
 | S6 | Circles & Collab | 13–14 | Meetways Circles, real-time chat, polls, notes | ✅ Done |
 | S7 | JustSplit | 15–16 | Multi-currency expense groups, debt simplification | ✅ Done |
-| S8 | Journey & Atlas | 17–18 | Magazine journals, visited countries map, gamification |
-| S9 | Notifications & Admin | 19–20 | Real-time notifications, admin panel, audit log |
-| S10 | Reservations & Export | 21–22 | Reservations, trip files, ICS/PDF, PWA, i18n |
-| S11 | MCP & Mobile Polish | 23 | MCP server, Expo mobile app, push notifications |
+| S8 | Journey & Atlas | 17–18 | Magazine journals, visited countries map, gamification | ✅ Done |
+| S9 | Notifications & Admin | 19–20 | Real-time notifications, admin panel, audit log | Planned |
+| S10 | Reservations & Export | 21–22 | Reservations, trip files, ICS/PDF, PWA, i18n | Planned |
+| S11 | MCP & Mobile Polish | 23 | MCP server, Expo mobile app, push notifications | Planned |
 | S12 | Production Launch | 24 | E2E tests, performance, deploy, cutover |
 
 ---
@@ -480,38 +480,31 @@
 ### Deliverables
 
 **Backend**
-- [ ] Journeys CRUD + share link + public view
-- [ ] Journey entries CRUD + reorder (rich content JSON blocks: text, photo, heading, quote, divider)
-- [ ] Entry photos: upload to R2 + gallery
-- [ ] Journey contributors: invite + remove + co-author
-- [ ] Link journey entries to trips
-- [ ] Atlas: visited countries CRUD + visited regions
-- [ ] Atlas stats: countries count, % of world, breakdown by continent/region
-- [ ] Gamification: badge definitions table + badge award logic (triggered by actions)
-  - Example badges: First Post, 10 Countries, 50 Posts, Trip Planner, Group Traveler
-- [ ] `GET /api/v1/gamification/stats` — aggregated travel stats
-- [ ] `GET /api/v1/gamification/leaderboard`
+- [x] Journeys CRUD + share link + public view
+- [x] Journey entries CRUD + reorder (rich content JSON blocks: text, photo, heading, quote, divider)
+- [x] Entry photos: upload to R2 + gallery (`POST /:journeyId/entries/:id/photos`)
+- [x] Journey contributors: invite + remove + co-author
+- [x] Link journey entries to trips (POST/DELETE `/:journeyId/trips/:tripId`)
+- [x] Atlas: visited countries CRUD + visited regions
+- [x] Atlas stats: countries count, % of world, breakdown by continent/region
+- [x] Gamification: badge engine in `apps/api/src/lib/badges.ts` (8 badge types)
+- [x] `GET /api/v1/gamification/stats` — aggregated travel stats
+- [x] `GET /api/v1/gamification/leaderboard`
 
 **Web**
-- [ ] Journeys page: list + cover grid
-- [ ] Create journey modal
-- [ ] Journey editor: block-based rich content editor (text, photo, heading, quote)
-  - Drag-drop block reorder
-  - Photo block: multi-upload, caption, grid layout
-- [ ] Journey public view: beautiful magazine layout (good typography, full-width photos)
-- [ ] Share journey modal: copy link
-- [ ] Invite contributor modal
-- [ ] Atlas page: SVG world map, hover → country name + visit date, fill by visited
-- [ ] Mark country as visited (click on map or search)
-- [ ] Country detail drawer: regions list, mark sub-regions
-- [ ] Atlas stats panel: progress bar, continent breakdown
-- [ ] Gamification: badges tab on profile, achievement notification
-- [ ] Travel stats section on profile: countries, posts, trips, total days traveled
+- [x] `/journeys` list page: grid of journey cards with cover, public/private badge
+- [x] Create journey modal (title, description)
+- [x] `/journeys/[id]` editor: block-based rich content editor (text, heading, quote, divider)
+- [x] `/journeys/public/[token]` — beautiful magazine layout, no auth required
+- [x] Share journey button: generates link, copy to clipboard
+- [x] Invite contributor modal (inline in editor)
+- [x] `/atlas` page: continent map visual + search + country chip grid
+- [x] Atlas stats panel: circular progress, continent breakdown bars
+- [x] Profile page: Badges tab (emoji grid), Stats tab (posts/trips/countries/badges)
+- [x] Nav links: BookOpen → /journeys, Globe2 → /atlas
 
 **Mobile**
-- [ ] Journeys screen: list + cover
-- [ ] Journal reader screen (public layout)
-- [ ] Atlas screen: map view + country list
+- [ ] Deferred to S11 — mobile journeys/atlas screens
 
 **Types & SDK**
 - [ ] `JourneySchema`, `JourneyEntrySchema`, `AtlasSchema`, `BadgeSchema`

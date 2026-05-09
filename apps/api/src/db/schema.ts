@@ -762,7 +762,7 @@ export const groupSettlements = sqliteTable('group_settlements', {
 });
 
 // ═════════════════════════════════════════════════════════════════════════════
-// JOURNEY MAGAZINE (Sprint 8 — skeleton stubs)
+// JOURNEY MAGAZINE (Sprint 8)
 // ═════════════════════════════════════════════════════════════════════════════
 
 export const journeys = sqliteTable('journeys', {
@@ -771,6 +771,7 @@ export const journeys = sqliteTable('journeys', {
   title: text('title').notNull(),
   description: text('description'),
   coverKey: text('cover_key'),
+  layoutPref: text('layout_pref').notNull().default('magazine'),
   isPublic: integer('is_public', { mode: 'boolean' }).notNull().default(false),
   shareToken: text('share_token').unique(),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(now),
@@ -784,38 +785,90 @@ export const journeyEntries = sqliteTable('journey_entries', {
   contentJson: text('content_json', { mode: 'json' }),
   orderIndex: integer('order_index').notNull().default(0),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(now),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(now),
 });
 
-// ═════════════════════════════════════════════════════════════════════════════
-// ATLAS (Sprint 8 — skeleton stubs)
-// ═════════════════════════════════════════════════════════════════════════════
-
-export const visitedCountries = sqliteTable('visited_countries', {
+export const journeyPhotos = sqliteTable('journey_photos', {
   id: text('id').primaryKey(),
-  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  countryCode: text('country_code').notNull(),
-  visitedAt: integer('visited_at', { mode: 'timestamp' }).notNull().default(now),
+  entryId: text('entry_id').notNull().references(() => journeyEntries.id, { onDelete: 'cascade' }),
+  storageKey: text('storage_key').notNull(),
+  caption: text('caption'),
+  takenAt: integer('taken_at', { mode: 'timestamp' }),
+  orderIndex: integer('order_index').notNull().default(0),
 });
 
-export const visitedRegions = sqliteTable('visited_regions', {
-  id: text('id').primaryKey(),
-  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  countryCode: text('country_code').notNull(),
-  regionCode: text('region_code').notNull(),
-  visitedAt: integer('visited_at', { mode: 'timestamp' }).notNull().default(now),
-});
+export const journeyContributors = sqliteTable(
+  'journey_contributors',
+  {
+    journeyId: text('journey_id').notNull().references(() => journeys.id, { onDelete: 'cascade' }),
+    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    role: text('role', { enum: ['owner', 'contributor'] }).notNull().default('contributor'),
+    invitedAt: integer('invited_at', { mode: 'timestamp' }).notNull().default(now),
+  },
+  (t) => ({
+    contributorUniq: uniqueIndex('journey_contributor_uniq').on(t.journeyId, t.userId),
+  }),
+);
+
+export const journeyTripLinks = sqliteTable(
+  'journey_trip_links',
+  {
+    journeyId: text('journey_id').notNull().references(() => journeys.id, { onDelete: 'cascade' }),
+    tripId: text('trip_id').notNull().references(() => trips.id, { onDelete: 'cascade' }),
+  },
+  (t) => ({
+    tripLinkUniq: uniqueIndex('journey_trip_link_uniq').on(t.journeyId, t.tripId),
+  }),
+);
 
 // ═════════════════════════════════════════════════════════════════════════════
-// GAMIFICATION (Sprint 8 — skeleton stub)
+// ATLAS (Sprint 8)
 // ═════════════════════════════════════════════════════════════════════════════
 
-export const userBadges = sqliteTable('user_badges', {
-  id: text('id').primaryKey(),
-  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  badgeType: text('badge_type').notNull(),
-  earnedAt: integer('earned_at', { mode: 'timestamp' }).notNull().default(now),
-  detailsJson: text('details_json', { mode: 'json' }),
-});
+export const visitedCountries = sqliteTable(
+  'visited_countries',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    countryCode: text('country_code').notNull(),
+    visitedAt: integer('visited_at', { mode: 'timestamp' }).notNull().default(now),
+  },
+  (t) => ({
+    countryUniq: uniqueIndex('visited_country_uniq').on(t.userId, t.countryCode),
+  }),
+);
+
+export const visitedRegions = sqliteTable(
+  'visited_regions',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    countryCode: text('country_code').notNull(),
+    regionCode: text('region_code').notNull(),
+    visitedAt: integer('visited_at', { mode: 'timestamp' }).notNull().default(now),
+  },
+  (t) => ({
+    regionUniq: uniqueIndex('visited_region_uniq').on(t.userId, t.regionCode),
+  }),
+);
+
+// ═════════════════════════════════════════════════════════════════════════════
+// GAMIFICATION (Sprint 8)
+// ═════════════════════════════════════════════════════════════════════════════
+
+export const userBadges = sqliteTable(
+  'user_badges',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    badgeType: text('badge_type').notNull(),
+    earnedAt: integer('earned_at', { mode: 'timestamp' }).notNull().default(now),
+    detailsJson: text('details_json', { mode: 'json' }),
+  },
+  (t) => ({
+    badgeUniq: uniqueIndex('user_badge_uniq').on(t.userId, t.badgeType),
+  }),
+);
 
 // ═════════════════════════════════════════════════════════════════════════════
 // MEDIA (shared)

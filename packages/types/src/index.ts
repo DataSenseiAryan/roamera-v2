@@ -22,3 +22,8 @@ export * from './schemas/packing';
 export * from './schemas/circles';
 export * from './schemas/collab';
 export * from './schemas/expenses';
+
+// Journey Magazine, Atlas, Gamification (Sprint 8)
+export * from './schemas/journeys';
+export * from './schemas/atlas';
+export * from './schemas/gamification';
