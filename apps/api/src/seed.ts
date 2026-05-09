@@ -47,6 +47,8 @@ import {
   journeyContributors,
   visitedCountries,
   userBadges,
+  notifications,
+  systemNotices,
 } from './db/schema';
 
 const PASSWORD = 'password123';
@@ -1074,6 +1076,96 @@ async function seed() {
     }
   } else {
     console.log('  Journeys already seeded — skipping Sprint 8');
+  }
+
+  // ── Sprint 9: Notifications, Admin ────────────────────────────────────────
+  const s9AryaUser = createdUsers.find((u) => u.username === 'arya_explorer');
+  const s9MarcoUser = createdUsers.find((u) => u.username === 'marco_travels');
+
+  if (s9AryaUser) {
+    // Make arya_explorer an admin
+    await db.update(users).set({ role: 'admin' }).where(eq(users.id, s9AryaUser.id));
+    console.log('  Set arya_explorer as admin');
+  }
+
+  const s9NoticesExist = await db.query.systemNotices.findFirst({
+    where: (t, { like: l }) => l(t.title, '%Roamera%'),
+  });
+  if (!s9NoticesExist && s9AryaUser) {
+    await db.insert(systemNotices).values([
+      {
+        id: crypto.randomUUID(),
+        title: 'Welcome to Roamera V2!',
+        body: 'Explore new features: Journey Magazine, Atlas, and Gamification are now live.',
+        type: 'info',
+        isActive: true,
+        createdBy: s9AryaUser.id,
+      },
+      {
+        id: crypto.randomUUID(),
+        title: 'Scheduled maintenance on Sunday 2–4 AM IST',
+        body: 'Some features may be briefly unavailable.',
+        type: 'warning',
+        isActive: false,
+        createdBy: s9AryaUser.id,
+      },
+    ]);
+
+    // Sample notifications for demo users
+    const sampleNotifs = [
+      ...(s9AryaUser && s9MarcoUser ? [
+        {
+          id: crypto.randomUUID(),
+          userId: s9AryaUser.id,
+          type: 'follow',
+          title: 'marco_travels started following you',
+          actorId: s9MarcoUser.id,
+          resourceType: 'user',
+          resourceId: s9MarcoUser.id,
+        },
+        {
+          id: crypto.randomUUID(),
+          userId: s9AryaUser.id,
+          type: 'reaction',
+          title: 'marco_travels reacted to your Moment',
+          actorId: s9MarcoUser.id,
+          resourceType: 'post',
+        },
+        {
+          id: crypto.randomUUID(),
+          userId: s9MarcoUser.id,
+          type: 'follow',
+          title: 'arya_explorer started following you',
+          actorId: s9AryaUser.id,
+          resourceType: 'user',
+          resourceId: s9AryaUser.id,
+        },
+        {
+          id: crypto.randomUUID(),
+          userId: s9MarcoUser.id,
+          type: 'comment',
+          title: 'arya_explorer commented on your Moment',
+          body: 'Amazing shot! What camera did you use?',
+          actorId: s9AryaUser.id,
+          resourceType: 'post',
+        },
+      ] : []),
+      ...(s9AryaUser ? [{
+        id: crypto.randomUUID(),
+        userId: s9AryaUser.id,
+        type: 'system',
+        title: 'Your account has been verified',
+        body: 'Welcome aboard! Start sharing your travel stories.',
+      }] : []),
+    ];
+
+    for (const notif of sampleNotifs) {
+      await db.insert(notifications).values(notif).onConflictDoNothing();
+    }
+
+    console.log('  Seeded Sprint 9 demo (admin, system notices, sample notifications)');
+  } else {
+    console.log('  S9 notices already seeded — skipping');
   }
 
   console.log('Seed complete!');

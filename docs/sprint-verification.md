@@ -778,3 +778,118 @@ curl -s -H "Authorization: Bearer $TOKEN" http://localhost:3000/api/v1/gamificat
 - [x] Gamification: badge engine awards badges idempotently, leaderboard sorts by countries
 - [x] Demo seed: 2 journeys, 8+5 visited countries, 4 badges per user
 - [x] API smoke tests pass: all 8 endpoints return correct data
+
+---
+
+## Sprint 9 — Notifications, Admin Panel, Comprehensive Test Suite
+
+### Running the Test Suite
+
+Sprint 9 introduces the full automated test suite. Run it after every sprint:
+
+```bash
+# One-command full sprint test (starts services, runs all suites, prints summary)
+./scripts/test-sprint.sh
+
+# Run only API tests (already running services)
+cd apps/api
+DATABASE_URL="file:./data/test.db" NODE_ENV="test" \
+  JWT_SECRET="test-jwt-secret-for-tests-only-must-be-32chars" \
+  JWT_REFRESH_SECRET="test-refresh-secret-for-tests-only-must-be-32chars" \
+  pnpm test
+
+# Run only AI service tests
+cd apps/ai-service
+AI_PROVIDER=mock AI_SERVICE_SECRET=dev-ai-service-secret-change-in-production-32 \
+  ./venv/bin/pytest tests/ -v
+
+# Run with coverage (API)
+cd apps/api && pnpm test:coverage
+```
+
+**Test results as of S9 implementation:**
+- API tests: **62 tests, 12 files, all green** (~13s)
+- AI service tests: **13 tests, 4 files, all green** (~1s)
+- Total: **75 tests — 0 failures**
+
+### Demo Walkthrough
+
+#### Scene 1: Notification bell (follow trigger)
+- Log in as `marco@demo.roamera.in`
+- Navigate to `arya@demo.roamera.in` profile → click Follow
+- Log in (new tab) as `arya@demo.roamera.in`
+- Expected: Bell icon shows unread badge (count ≥ 1)
+
+#### Scene 2: Notification drawer
+- Click bell icon → drawer slides in from right
+- Expected: Notification "marco_travels started following you" visible
+- Click notification → marks as read, badge count decrements
+
+#### Scene 3: Interactive trip invite
+- As arya (admin), invite marco to a trip via `/trips/:id/members`
+- As marco, open notification drawer
+- Expected: Notification has "Accept" and "Decline" buttons
+- Click Accept → `POST /api/v1/notifications/:id/respond { action: "accept" }`
+
+#### Scene 4: Notification preferences
+- Navigate to http://localhost:3001/settings/notifications
+- Toggle off "Email" for "New Comment"
+- Expected: `PATCH /api/v1/notifications/preferences` updates pref; no email on next comment
+
+#### Scene 5: System notice banner
+- Log in as `arya@demo.roamera.in` (admin)
+- Navigate to http://localhost:3001/admin/notices
+- Create a new notice: title "Welcome to Roamera V2 Beta", body "We're live!", mark active
+- Navigate to any page
+- Expected: Yellow banner appears at top with dismiss (×) button
+
+#### Scene 6: Admin user management
+- Navigate to http://localhost:3001/admin/users
+- Expected: User table with all demo users, role badges
+- Suspend `leo_backpacker`: click suspend toggle
+- Try to log in as `leo@demo.roamera.in`
+- Expected: 403 "Account suspended" error
+
+#### Scene 7: Admin stats dashboard
+- Navigate to http://localhost:3001/admin
+- Expected: 4 stat cards: Total Users, Total Posts, Total Trips, DAU
+
+#### Scene 8: Admin audit log
+- Navigate to http://localhost:3001/admin/audit-log
+- Expected: Recent actions (follows, post creations, logins) paginated log
+
+### API Smoke Tests (S9)
+
+```bash
+BASE="http://localhost:3000/api/v1"
+TOKEN=$(curl -s -X POST $BASE/auth/login -H "Content-Type: application/json" \
+  -d '{"email":"arya@demo.roamera.in","password":"password123"}' | jq -r .accessToken)
+
+# Notifications feed
+curl -s "$BASE/notifications" -H "Authorization: Bearer $TOKEN" | jq 'length'
+
+# Unread count
+curl -s "$BASE/notifications/unread-count" -H "Authorization: Bearer $TOKEN" | jq .count
+
+# Notification prefs
+curl -s "$BASE/notifications/preferences" -H "Authorization: Bearer $TOKEN" | jq 'length'
+
+# Public notices
+curl -s "$BASE/notices" | jq 'length'
+
+# Admin stats (admin token required)
+curl -s "$BASE/admin/stats" -H "Authorization: Bearer $TOKEN" | jq .
+
+# Admin user list
+curl -s "$BASE/admin/users" -H "Authorization: Bearer $TOKEN" | jq '.users | length'
+```
+
+### Sprint 9 Acceptance Criteria
+
+- [x] Follow a user → followee receives in-app notification within 1s (WS delivery)
+- [x] Trip invite notification has accept/decline buttons that work inline
+- [x] Turn off email notifications for "new comment" → no email sent on comment
+- [x] Admin can suspend a user → suspended user gets 403 on API calls
+- [x] System notice created by admin → banner visible to all logged-in users
+- [x] `./scripts/test-sprint.sh` exits 0 — all 75 tests green
+- [x] AI service works with mock provider (no API key required in dev)

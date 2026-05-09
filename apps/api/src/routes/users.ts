@@ -11,6 +11,7 @@ import { authenticate, optionalAuthenticate, type AuthRequest } from '../middlew
 import { uploadRateLimit } from '../middleware/rate-limit';
 import { AppError } from '../middleware/error';
 import { uploadFile, generateStorageKey, getPublicUrl } from '../lib/storage';
+import { createNotification } from '../lib/notifications';
 
 function formatTimestamp(ts: Date | number | null): string | null {
   if (!ts) return null;
@@ -277,6 +278,17 @@ router.post('/:userId/follow', authenticate, async (req: AuthRequest, res, next)
     await db.insert(follows)
       .values({ followerId, followingId: userId })
       .onConflictDoNothing();
+
+    // Notify the followed user
+    const [actor] = await db.select({ username: users.username }).from(users).where(eq(users.id, followerId)).limit(1);
+    createNotification({
+      userId,
+      actorId: followerId,
+      type: 'follow',
+      title: `${actor?.username ?? 'Someone'} started following you`,
+      resourceType: 'user',
+      resourceId: followerId,
+    }).catch(() => {});
 
     res.json({ success: true, message: 'Followed successfully.' });
   } catch (err) {

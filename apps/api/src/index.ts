@@ -7,6 +7,7 @@ import { env } from './lib/env';
 import { logger } from './lib/logger';
 import { initWsManager } from './lib/ws';
 import { wsTokenStore } from './routes/auth';
+import { startCronJobs } from './jobs/cron';
 
 const app = createApp();
 const server = http.createServer(app);
@@ -23,6 +24,7 @@ server.listen(env.PORT, () => {
   logger.info(`Roamera API running on http://localhost:${env.PORT}`);
   logger.info(`WebSocket available at ws://localhost:${env.PORT}/ws?token=<ws_token>`);
   logger.info(`Environment: ${env.NODE_ENV}`);
+  startCronJobs();
 });
 
 process.on('SIGTERM', () => {

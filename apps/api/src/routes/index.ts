@@ -18,6 +18,8 @@ import gamificationRouter from './gamification';
 import mapsRouter from './maps';
 import weatherRouter from './weather';
 import { adminRouter as adminPackingRouter, publicRouter as publicPackingTemplatesRouter } from './admin-packing';
+import notificationsRouter from './notifications';
+import adminRouter, { getActiveNotices } from './admin';
 
 const router = Router();
 
@@ -60,8 +62,10 @@ router.use('/api/v1/atlas', atlasRouter);
 router.use('/api/v1/gamification', gamificationRouter);
 
 // Sprint 9: Notifications + Admin
-// router.use('/api/v1/notifications', notificationsRouter);
-// router.use('/api/v1/admin', adminRouter);
+router.use('/api/v1/notifications', notificationsRouter);
+router.use('/api/v1/admin', adminRouter);
+// Public: active system notices (no auth required)
+router.get('/api/v1/notices', getActiveNotices as never);
 
 // Sprint 11: MCP
 // router.use('/api/v1/mcp', mcpRouter);

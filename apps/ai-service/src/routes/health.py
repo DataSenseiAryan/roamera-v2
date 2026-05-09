@@ -11,4 +11,5 @@ async def health() -> dict:
         "status": "ok",
         "provider": settings.ai_provider,
         "service": "ai-service",
+        "mock_mode": settings.ai_provider == "mock",
     }

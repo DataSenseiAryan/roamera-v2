@@ -386,6 +386,8 @@ Notes:
 
 ## 14. Notifications — `/api/v1/notifications`
 
+✅ Implemented (S9)
+
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | `GET`  | `/` | auth | In-app notification feed (paginated) |
@@ -396,6 +398,8 @@ Notes:
 | `POST` | `/:id/respond` | auth | Respond to interactive notification (accept/decline) |
 | `GET`  | `/preferences` | auth | Per-event-type channel preferences |
 | `PATCH` | `/preferences` | auth | Update preferences |
+
+**Public endpoint:** `GET /api/v1/notices` — active system notices (no auth required)
 
 ---
 
@@ -414,6 +418,8 @@ Notes:
 ---
 
 ## 16. Admin — `/api/v1/admin`
+
+✅ Implemented (S9)
 
 All routes require `role = admin`.
 

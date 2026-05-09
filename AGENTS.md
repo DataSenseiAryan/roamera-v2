@@ -252,16 +252,47 @@ pnpm --filter api db:migrate          # apply to local dev DB
 - Subscribe to rooms: `{ type: "subscribe", rooms: ["trip:42"] }`
 - Full event catalog: `docs/architecture/07-api-surface.md §21`
 
+### Running the test suite (added S9 — run after EVERY sprint)
+
+```bash
+# Full sprint test (starts services, runs all suites, prints summary)
+./scripts/test-sprint.sh
+
+# API tests only (vitest + supertest)
+cd apps/api
+DATABASE_URL="file:./data/test.db" NODE_ENV="test" \
+  JWT_SECRET="test-jwt-secret-for-tests-only-must-be-32chars" \
+  JWT_REFRESH_SECRET="test-refresh-secret-for-tests-only-must-be-32chars" \
+  pnpm test
+
+# AI service tests only (pytest)
+cd apps/ai-service
+AI_PROVIDER=mock AI_SERVICE_SECRET=dev-ai-service-secret-change-in-production-32 \
+  ./venv/bin/pytest tests/ -v
+```
+
+**Test inventory (S9 baseline — 75 tests total):**
+- `apps/api/src/__tests__/`: 12 files (auth, feed, posts, trips, circles, expenses, journeys, atlas, gamification, notifications, admin, ai) — 62 tests
+- `apps/ai-service/tests/`: 4 files (test_health, test_hmac, test_plan, test_caption) — 13 tests
+
 ### Demo accounts (after running seed)
 All password: `password123`
 
-| Username | Email |
-|----------|-------|
-| arya_explorer | arya@demo.roamera.in |
-| marco_travels | marco@demo.roamera.in |
-| leo_backpacker | leo@demo.roamera.in |
-| ana_nomad | ana@demo.roamera.in |
-| kenji_wanders | kenji@demo.roamera.in |
+| Username | Email | Role |
+|----------|-------|------|
+| arya_explorer | arya@demo.roamera.in | **admin** |
+| marco_travels | marco@demo.roamera.in | user |
+| leo_backpacker | leo@demo.roamera.in | user |
+| ana_nomad | ana@demo.roamera.in | user |
+| kenji_wanders | kenji@demo.roamera.in | user |
+
+### S9 As-Built Notes
+- `apps/api/src/app.ts` exports the Express app without calling `listen()` — required for supertest
+- `apps/api/src/index.ts` is the entrypoint that calls `app.listen()` and `startCronJobs()`
+- SQLite does not support `ilike`; admin search uses `like` with lowercased input
+- AI service defaults to `MockAIClient` when `AI_PROVIDER=mock` or the provider's API key is empty
+- JWT secrets in tests must be ≥ 32 chars (Zod env validation enforces this)
+- Vitest runs tests sequentially (`fileParallelism: false, singleFork: true`) to prevent SQLite locking
 
 ---
 

@@ -16,3 +16,4 @@ export * from './hooks/expenses';
 export * from './hooks/journeys';
 export * from './hooks/atlas';
 export * from './hooks/gamification';
+export * from './hooks/notifications';

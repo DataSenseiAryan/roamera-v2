@@ -57,3 +57,20 @@ export async function sendPasswordResetEmail(to: string, token: string): Promise
      <p>This link expires in 1 hour. If you didn't request this, ignore this email.</p>`,
   );
 }
+
+export async function sendNotificationEmail(
+  to: string,
+  username: string,
+  title: string,
+  body?: string,
+): Promise<void> {
+  await sendEmail(
+    to,
+    title,
+    `<h2>${title}</h2>
+     ${body ? `<p>${body}</p>` : ''}
+     <p>Open <a href="${APP_URL}">Roamera</a> to see more.</p>
+     <p style="color:#888;font-size:12px;">You received this because you have email notifications enabled. 
+     <a href="${APP_URL}/settings/notifications">Manage preferences</a>.</p>`,
+  );
+}

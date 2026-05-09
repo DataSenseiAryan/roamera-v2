@@ -168,6 +168,81 @@ class AnthropicClient:
         return message.content[0].text  # type: ignore[union-attr]
 
 
+# ─── Mock (dev/test — no API key required) ───────────────────────────────────
+
+class MockAIClient:
+    """Returns hard-coded plausible responses. Used when no real API key is set."""
+
+    async def generate(self, prompt: str, schema: dict[str, Any] | None = None) -> str:
+        return json.dumps({
+            "destination": "Demo City",
+            "nights": 3,
+            "currency": "INR",
+            "totalEstimatedCost": 8000,
+            "budgetBand": "moderate",
+            "days": [
+                {
+                    "dayNumber": 1,
+                    "title": "Arrival & Exploration",
+                    "places": [
+                        {"name": "Morning city walk", "duration": "2h", "cost": 0, "type": "attraction"},
+                        {"name": "Local cuisine lunch", "duration": "1h", "cost": 500, "type": "food"},
+                        {"name": "Museum visit", "duration": "3h", "cost": 300, "type": "attraction"},
+                    ],
+                    "totalCost": 800,
+                },
+                {
+                    "dayNumber": 2,
+                    "title": "Adventure Day",
+                    "places": [
+                        {"name": "Sunrise hike", "duration": "3h", "cost": 200, "type": "attraction"},
+                        {"name": "Street food tour", "duration": "2h", "cost": 400, "type": "food"},
+                        {"name": "Evening cultural show", "duration": "2h", "cost": 600, "type": "attraction"},
+                    ],
+                    "totalCost": 1200,
+                },
+                {
+                    "dayNumber": 3,
+                    "title": "Markets & Farewell",
+                    "places": [
+                        {"name": "Market shopping", "duration": "2h", "cost": 1000, "type": "attraction"},
+                        {"name": "Farewell lunch", "duration": "1h", "cost": 700, "type": "food"},
+                    ],
+                    "totalCost": 1700,
+                },
+            ],
+            "tips": [
+                "Book accommodation in advance",
+                "Try local street food",
+                "Carry cash for small vendors",
+            ],
+            "bestTimeToVisit": "October to March",
+        })
+
+    async def generate_with_image(self, prompt: str, image_url: str) -> str:
+        return (
+            "A stunning travel destination with rich culture, vibrant colours, "
+            "and beautiful landscapes that promise an unforgettable adventure."
+        )
+
+
+# ─── Provider key checks ─────────────────────────────────────────────────────
+
+_PROVIDER_KEY_MAP: dict[str, str] = {
+    "gemini": "google_api_key",
+    "groq": "groq_api_key",
+    "openai": "openai_api_key",
+    "anthropic": "anthropic_api_key",
+}
+
+
+def _provider_has_key(provider_name: str) -> bool:
+    attr = _PROVIDER_KEY_MAP.get(provider_name)
+    if not attr:
+        return True  # mock and unknown providers don't need a key check
+    return bool(getattr(settings, attr, ""))
+
+
 # ─── Factory ─────────────────────────────────────────────────────────────────
 
 _CLIENTS: dict[str, type] = {
@@ -175,11 +250,19 @@ _CLIENTS: dict[str, type] = {
     "groq": GroqClient,
     "openai": OpenAIClient,
     "anthropic": AnthropicClient,
+    "mock": MockAIClient,
 }
 
 
 def get_ai_client(provider: str | None = None) -> AIClient:
     name = provider or settings.ai_provider
+    # Auto-fall-back to mock when the chosen provider has no API key configured
+    if name != "mock" and not _provider_has_key(name):
+        logger.warning(
+            "No API key for provider — falling back to mock",
+            provider=name,
+        )
+        name = "mock"
     cls = _CLIENTS.get(name)
     if not cls:
         raise ValueError(f"Unknown AI provider: {name!r}. Valid: {list(_CLIENTS)}")
@@ -191,11 +274,15 @@ async def generate_with_fallback(
     schema: dict[str, Any] | None = None,
     image_url: str | None = None,
 ) -> str:
-    """Try primary provider, fall back on error."""
-    providers = [settings.ai_provider, settings.ai_fallback_provider]
+    """Try primary provider, fall back to secondary then mock on error."""
+    providers = [settings.ai_provider, settings.ai_fallback_provider, "mock"]
+    seen: set[str] = set()
     last_error: Exception | None = None
 
     for provider_name in providers:
+        if provider_name in seen:
+            continue
+        seen.add(provider_name)
         try:
             client = get_ai_client(provider_name)
             if image_url:

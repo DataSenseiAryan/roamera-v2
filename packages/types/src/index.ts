@@ -27,3 +27,6 @@ export * from './schemas/expenses';
 export * from './schemas/journeys';
 export * from './schemas/atlas';
 export * from './schemas/gamification';
+
+// Notifications & Admin (Sprint 9)
+export * from './schemas/notifications';

@@ -7,8 +7,8 @@ class Settings(BaseSettings):
     port: int = 8000
     node_env: str = "development"
 
-    # AI provider selection
-    ai_provider: str = "gemini"  # gemini | groq | openai | anthropic
+    # AI provider selection (default: mock — works with no API keys in dev)
+    ai_provider: str = "mock"  # mock | gemini | groq | openai | anthropic
     ai_fallback_provider: str = "groq"
 
     # Provider API keys

@@ -29,6 +29,7 @@ export const users = sqliteTable(
     avatarKey: text('avatar_key'),
     budgetBand: text('budget_band', { enum: ['backpacker', 'mid_range', 'luxury'] }),
     interests: text('interests', { mode: 'json' }).$type<string[]>().notNull().default([]),
+    isSuspended: integer('is_suspended', { mode: 'boolean' }).notNull().default(false),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(now),
     updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(now),
   },
@@ -269,27 +270,40 @@ export const savedPosts = sqliteTable(
 // NOTIFICATIONS (Sprint 9 — skeleton stub)
 // ═════════════════════════════════════════════════════════════════════════════
 
-export const notifications = sqliteTable('notifications', {
-  id: text('id').primaryKey(),
-  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  type: text('type').notNull(),
-  title: text('title').notNull(),
-  body: text('body'),
-  dataJson: text('data_json', { mode: 'json' }),
-  actorId: text('actor_id').references(() => users.id, { onDelete: 'set null' }),
-  resourceType: text('resource_type'),
-  resourceId: text('resource_id'),
-  readAt: integer('read_at', { mode: 'timestamp' }),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(now),
-});
+export const notifications = sqliteTable(
+  'notifications',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    type: text('type').notNull(),
+    title: text('title').notNull(),
+    body: text('body'),
+    dataJson: text('data_json', { mode: 'json' }),
+    actorId: text('actor_id').references(() => users.id, { onDelete: 'set null' }),
+    resourceType: text('resource_type'),
+    resourceId: text('resource_id'),
+    readAt: integer('read_at', { mode: 'timestamp' }),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(now),
+  },
+  (t) => ({
+    userReadIdx: index('notif_user_read_idx').on(t.userId, t.readAt),
+    userCreatedIdx: index('notif_user_created_idx').on(t.userId, t.createdAt),
+  }),
+);
 
-export const notificationPrefs = sqliteTable('notification_prefs', {
-  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  eventType: text('event_type').notNull(),
-  inApp: integer('in_app', { mode: 'boolean' }).notNull().default(true),
-  email: integer('email', { mode: 'boolean' }).notNull().default(true),
-  push: integer('push', { mode: 'boolean' }).notNull().default(false),
-});
+export const notificationPrefs = sqliteTable(
+  'notification_prefs',
+  {
+    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    eventType: text('event_type').notNull(),
+    inApp: integer('in_app', { mode: 'boolean' }).notNull().default(true),
+    email: integer('email', { mode: 'boolean' }).notNull().default(true),
+    push: integer('push', { mode: 'boolean' }).notNull().default(false),
+  },
+  (t) => ({
+    uniqueUserEvent: uniqueIndex('notif_prefs_user_event').on(t.userId, t.eventType),
+  }),
+);
 
 // ═════════════════════════════════════════════════════════════════════════════
 // DESTINATIONS (Sprint 2 — skeleton stub)
@@ -904,18 +918,30 @@ export const mcpTokens = sqliteTable('mcp_tokens', {
 // SYSTEM (Sprint 9 — skeleton stubs)
 // ═════════════════════════════════════════════════════════════════════════════
 
-export const systemNotices = sqliteTable('system_notices', {
-  id: text('id').primaryKey(),
-  title: text('title').notNull(),
-  body: text('body'),
-  type: text('type').notNull().default('info'),
-  isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
-  createdBy: text('created_by').references(() => users.id),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(now),
-});
+export const systemNotices = sqliteTable(
+  'system_notices',
+  {
+    id: text('id').primaryKey(),
+    title: text('title').notNull(),
+    body: text('body'),
+    type: text('type').notNull().default('info'),
+    isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+    createdBy: text('created_by').references(() => users.id),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(now),
+  },
+  (t) => ({
+    activeIdx: index('notices_active_idx').on(t.isActive),
+  }),
+);
 
-export const userNoticeDismissals = sqliteTable('user_notice_dismissals', {
-  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  noticeId: text('notice_id').notNull().references(() => systemNotices.id, { onDelete: 'cascade' }),
-  dismissedAt: integer('dismissed_at', { mode: 'timestamp' }).notNull().default(now),
-});
+export const userNoticeDismissals = sqliteTable(
+  'user_notice_dismissals',
+  {
+    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    noticeId: text('notice_id').notNull().references(() => systemNotices.id, { onDelete: 'cascade' }),
+    dismissedAt: integer('dismissed_at', { mode: 'timestamp' }).notNull().default(now),
+  },
+  (t) => ({
+    uniqueDismissal: uniqueIndex('notice_dismissal_uniq').on(t.userId, t.noticeId),
+  }),
+);

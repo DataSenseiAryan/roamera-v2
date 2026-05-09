@@ -20,6 +20,9 @@ export type WsEvent =
   | 'trip:updated'
   | 'member:added'
   | 'member:removed'
+  | 'notification:new'
+  | 'notification:updated'
+  | 'system:notice'
   | 'pong';
 
 interface ClientMeta {

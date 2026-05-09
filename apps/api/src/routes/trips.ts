@@ -16,6 +16,7 @@ import { authenticate, type AuthRequest } from '../middleware/auth';
 import { AppError } from '../middleware/error';
 import { uploadFile, generateStorageKey, getPublicUrl } from '../lib/storage';
 import { getWsManager } from '../lib/ws';
+import { createNotification } from '../lib/notifications';
 import budgetRouter from './budget';
 import collabRouter from './collab';
 import packingRouter from './packing';
@@ -363,6 +364,18 @@ router.post('/:tripId/members', authenticate, async (req: AuthRequest, res, next
 
     const wsManager = getWsManager();
     wsManager.broadcast(`trip:${tripId}`, 'member:added', { userId: targetUser.id, username: targetUser.username, role: memberRole });
+
+    // Notify invited user
+    const [trip] = await db.select({ title: trips.title }).from(trips).where(eq(trips.id, tripId)).limit(1);
+    const [actor] = await db.select({ username: users.username }).from(users).where(eq(users.id, userId)).limit(1);
+    createNotification({
+      userId: targetUser.id,
+      actorId: userId,
+      type: 'trip_invite',
+      title: `${actor?.username ?? 'Someone'} added you to trip "${trip?.title ?? 'a trip'}"`,
+      resourceType: 'trip',
+      resourceId: tripId,
+    }).catch(() => {});
 
     res.status(201).json({ success: true, userId: targetUser.id, role: memberRole });
   } catch (err) { next(err); }

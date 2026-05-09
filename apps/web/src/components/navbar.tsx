@@ -2,9 +2,10 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { LogOut, User, Settings, Compass, MapPin, Bookmark, Search, Sparkles, Globe, Map, Users, Receipt, BookOpen, Globe2 } from 'lucide-react';
+import { LogOut, User, Settings, Compass, MapPin, Bookmark, Search, Sparkles, Globe, Map, Users, Receipt, BookOpen, Globe2, Shield } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth-store';
 import { getApiClient } from '@roamera/sdk';
+import { NotificationBell } from './notification-bell';
 
 export function Navbar() {
   const router = useRouter();
@@ -106,6 +107,16 @@ export function Navbar() {
           </Link>
           {user && (
             <>
+              <NotificationBell />
+              {user.role === 'admin' && (
+                <Link
+                  href="/admin"
+                  className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                  title="Admin Panel"
+                >
+                  <Shield className="h-5 w-5 text-orange-500" />
+                </Link>
+              )}
               <Link
                 href={`/u/${user.username}`}
                 className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition"

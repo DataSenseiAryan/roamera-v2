@@ -23,6 +23,7 @@ import {
 import { authenticate, type AuthRequest } from '../middleware/auth';
 import { uploadRateLimit } from '../middleware/rate-limit';
 import { AppError } from '../middleware/error';
+import { createNotification } from '../lib/notifications';
 import {
   uploadFile,
   generateStorageKey,
@@ -413,6 +414,19 @@ router.post('/:postId/reactions', authenticate, async (req: AuthRequest, res, ne
       await db.insert(reactions).values({ postId, userId, type });
       action = 'added';
 
+      // Notify post author (not self)
+      if (post.userId !== userId) {
+        const [actor] = await db.select({ username: users.username }).from(users).where(eq(users.id, userId)).limit(1);
+        createNotification({
+          userId: post.userId,
+          actorId: userId,
+          type: 'reaction',
+          title: `${actor?.username ?? 'Someone'} reacted to your Moment`,
+          resourceType: 'post',
+          resourceId: postId,
+        }).catch(() => {});
+      }
+
       if (type === 'wanna_go') {
         const dest = (post.destinations as Array<{ name: string; lat?: string; lng?: string; country?: string }>)?.[0];
         if (dest) {
@@ -590,6 +604,19 @@ router.post('/:postId/comments', authenticate, async (req: AuthRequest, res, nex
     const author = await db.query.users.findFirst({
       where: (t, { eq: e }) => e(t.id, userId),
     });
+
+    // Notify post author (not self)
+    if (post.userId !== userId) {
+      createNotification({
+        userId: post.userId,
+        actorId: userId,
+        type: 'comment',
+        title: `${author?.username ?? 'Someone'} commented on your Moment`,
+        body: content.length > 80 ? content.slice(0, 77) + '...' : content,
+        resourceType: 'post',
+        resourceId: postId,
+      }).catch(() => {});
+    }
 
     res.status(201).json({
       success: true,
