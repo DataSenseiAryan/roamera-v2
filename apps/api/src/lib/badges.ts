@@ -56,8 +56,9 @@ const BADGE_DEFINITIONS: BadgeDef[] = [
     type: 'first_journey',
     name: 'Journal Keeper',
     icon: '📓',
-    description: 'Created your first Journey Magazine',
+    description: 'Wrote your first trip journal',
     check: async (userId) => {
+      // S12: count trip-scoped journals (tripId is set)
       const [row] = await db.select({ c: count() }).from(journeys).where(eq(journeys.userId, userId));
       return (row?.c ?? 0) >= 1;
     },

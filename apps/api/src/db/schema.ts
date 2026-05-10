@@ -782,6 +782,9 @@ export const groupSettlements = sqliteTable('group_settlements', {
 export const journeys = sqliteTable('journeys', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  // S12: tripId links a journey directly to a trip (trip-scoped journal).
+  // When set, this journey is the trip's journal tab. The old standalone journeys have tripId = null.
+  tripId: text('trip_id').references(() => trips.id, { onDelete: 'cascade' }),
   title: text('title').notNull(),
   description: text('description'),
   coverKey: text('cover_key'),

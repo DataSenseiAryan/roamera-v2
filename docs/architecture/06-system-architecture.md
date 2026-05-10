@@ -746,3 +746,43 @@ pnpm dev                             # Turborepo: web (3001) + api (3000) + ai (
 | Vercel Hobby | Need team features or private domain on Pro | Vercel Pro ($20/mo) |
 | SQLite concurrency | Write-heavy load (> 100 concurrent writes) | Migrate to Postgres (Neon free tier) |
 | Amadeus free tier | > 2000 API calls/mo | Amadeus Self-Service paid (pay-as-you-go) |
+
+---
+
+## 17. Testing Strategy (Sprint 12)
+
+### Unit Tests — Vitest (`apps/api`)
+- 131 tests across 20 test files
+- Run: `pnpm --filter api test`
+- Setup: `apps/api/src/__tests__/setup.ts` seeds test DB with 2 users, 30 destinations
+- Key suites: auth, posts, trips, budget, packing, circles, collab, notifications, gamification, atlas, mcp, reservations, security, trip-journal, chat, budget-groups
+
+### E2E Tests — Playwright (`apps/web/e2e/`)
+- 4 spec files: `auth.spec.ts`, `posts.spec.ts`, `trips-journal.spec.ts`, `ai.spec.ts`
+- Config: `apps/web/playwright.config.ts` — chromium, baseURL `http://localhost:3001`
+- Run: `pnpm --filter @roamera/web test:e2e` (requires API + Web running)
+- CI: `npx playwright install --with-deps chromium` before running
+
+### Load Test — autocannon (`apps/api/src/load-test.ts`)
+- Target: `GET /api/v1/feed/compass` — 100 concurrent, 30s duration
+- Target p95 latency < 200ms
+- Run: `API_URL=http://localhost:4000 AUTH_TOKEN=<token> pnpm --filter api load-test`
+
+### CI/CD — GitHub Actions (`.github/workflows/ci.yml`)
+4 jobs run on push to `main`/`develop`:
+1. `api-tests` — Vitest (Node 22, pnpm 9)
+2. `ai-tests` — pytest (Python 3.12)
+3. `web-build` — `next build` with typecheck
+4. `docker-build` — builds both `apps/api/Dockerfile` and `apps/ai-service/Dockerfile`
+
+---
+
+## 18. Performance Optimizations (Sprint 12)
+
+| Area | Optimization | Status |
+|------|-------------|--------|
+| Next.js images | `sharp` installed, `next/image` with WebP optimization | ✅ |
+| SQLite | WAL mode + 64MB cache + NORMAL sync via `PRAGMA` on startup | ✅ |
+| SQLite | `PRAGMA temp_store=MEMORY` for in-memory query temp tables | ✅ |
+| API images | `remotePatterns` configured for R2, Pexels, Unsplash | ✅ |
+| Future | Drizzle `.prepare()` for hot queries when migrating to Postgres | Planned |

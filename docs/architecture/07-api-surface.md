@@ -57,9 +57,11 @@
 
 ## 3. Posts (Moments) — `/api/v1/posts`
 
+> **Note:** Post listing (feed) is served from `/api/v1/feed/compass` and `/api/v1/feed/following`. `GET /api/v1/posts` returns the current user's own posts only.
+
 | Method | Path | Auth | Description | Zod Schema |
 |--------|------|------|-------------|------------|
-| `GET`  | `/` | auth | Feed: `?feed=global\|following` + `?cursor=` + `?limit=` | — |
+| `GET`  | `/` | auth | Current user's posts | — |
 | `POST` | `/` | auth | Create Moment | `CreatePostSchema` |
 | `GET`  | `/:postId` | [public] | Post detail | — |
 | `PATCH` | `/:postId` | auth (owner) | Edit post | `UpdatePostSchema` |
@@ -279,7 +281,11 @@ hashtags[], itinerary_json
 
 ---
 
-## 7. JustSplit (Expense Groups) — `/api/v1/expenses` ✅ Implemented (S7)
+## 7. JustSplit (Expense Groups) — `/api/v1/expenses` ⚠️ Deprecated (S12)
+
+> **S12 change:** Standalone JustSplit expense groups are merged into the trip budget (`/api/v1/trips/:tripId/budget`). The `/api/v1/expenses` router is removed. Use trip budget endpoints for expense tracking.
+
+**Deprecated endpoints:**
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
@@ -299,7 +305,11 @@ hashtags[], itinerary_json
 
 ---
 
-## 8. Journey Magazine — `/api/v1/journeys` ✅ Implemented (S8)
+## 8. Journey Magazine — `/api/v1/journeys` ⚠️ Superseded (S12)
+
+> **S12 change:** Journey Magazine is being absorbed into My Trips as a "Journal" tab. The standalone `/api/v1/journeys` endpoints are replaced by `/api/v1/trips/:tripId/journal` (see §8b below). The `/api/v1/journeys` router mount is removed in S12.
+
+**Deprecated endpoints (replaced by §8b):**
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
@@ -322,25 +332,43 @@ hashtags[], itinerary_json
 
 ---
 
+## 8b. Trip Journal — `/api/v1/trips/:tripId/journal` ✅ Implemented (S12)
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET`  | `/` | auth (member) | List journal entries for trip |
+| `POST` | `/` | auth (editor) | Create entry (title + contentJson blocks) |
+| `PATCH` | `/:entryId` | auth (editor) | Update entry |
+| `DELETE` | `/:entryId` | auth (editor) | Delete entry |
+| `POST` | `/:entryId/photos` | auth (editor) | Upload photos (multipart) |
+| `GET`  | `/share` | auth (member) | Get public share token |
+| `POST` | `/share` | auth (owner) | Generate share token |
+| `DELETE` | `/share` | auth (owner) | Revoke share token |
+| `GET`  | `/public/:token` | [public] | Public read-only journal view |
+
+---
+
 ## 9. Atlas — `/api/v1/atlas` ✅ Implemented (S8)
+
+> **S12 change:** `GET /stats` is deprecated. Atlas stats are merged into `GET /api/v1/gamification/stats` which now includes `countriesVisited`, `percentOfWorld`, `continentBreakdown`.
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | `GET`  | `/countries` | auth | All visited countries for user |
 | `POST` | `/countries/:code` | auth | Mark country as visited |
 | `DELETE` | `/countries/:code` | auth | Unmark country |
-| `GET`  | `/stats` | auth | Travel stats (countries, %, regions, badges) |
+| `GET`  | `/stats` | auth | ⚠️ Deprecated (S12) — use `GET /gamification/stats` instead |
 | `GET`  | `/regions/:countryCode` | auth | Visited regions within a country |
 | `POST` | `/regions/:regionCode` | auth | Mark region visited |
 
 ---
 
-## 10. Gamification — `/api/v1/gamification` ✅ Implemented (S8)
+## 10. Gamification — `/api/v1/gamification` ✅ Implemented (S8), Extended (S12)
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | `GET`  | `/badges` | auth | User's earned badges |
-| `GET`  | `/stats` | auth | Aggregated travel stats |
+| `GET`  | `/stats` | auth | Aggregated travel stats (posts, trips, badges, **+ atlas fields in S12**) |
 | `GET`  | `/leaderboard` | auth | Top travelers (global or friends) |
 
 ---
@@ -488,12 +516,13 @@ OAuth 2.1 endpoints for AI assistants (TREK pattern). Uses `@modelcontextprotoco
 
 ---
 
-## 19. Public Config — `/api/v1/config`
+## 19. Public Config — `/api/v1/config` ⚠️ Not implemented (deferred)
+
+> The `/api/v1/config` router is **not mounted**. The health endpoint lives at `GET /api/health` (root level, not under `/api/v1`). Feature flags are deferred to post-MVP.
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| `GET`  | `/` | [public] | Server version, feature flags, invite-only mode |
-| `GET`  | `/health` | [public] | `{ status: "ok", db: "ok", version, uptime_ms }` |
+| `GET`  | `/api/health` | [public] | `{ status: "ok", db: "ok", version, uptime_ms }` |
 
 ---
 

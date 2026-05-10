@@ -83,7 +83,7 @@ router.delete('/countries/:code', authenticate, async (req: AuthRequest, res, ne
   }
 });
 
-// ─── GET /stats — aggregated atlas stats ──────────────────────────────────────
+// ─── GET /stats — DEPRECATED (S12): use GET /api/v1/gamification/stats instead ─
 router.get('/stats', authenticate, async (req: AuthRequest, res, next) => {
   try {
     const userId = req.user!.id;
@@ -106,6 +106,8 @@ router.get('/stats', authenticate, async (req: AuthRequest, res, next) => {
       count: c,
     }));
 
+    res.setHeader('Deprecation', 'true');
+    res.setHeader('Link', '</api/v1/gamification/stats>; rel="successor-version"');
     res.json({
       stats: {
         totalCountries: totalVisited,

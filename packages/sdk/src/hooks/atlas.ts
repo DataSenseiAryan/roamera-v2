@@ -20,6 +20,10 @@ export function useVisitedCountries() {
   });
 }
 
+/**
+ * @deprecated S12: Atlas stats are merged into gamification stats.
+ * Use `useTravelStats()` from './gamification' instead.
+ */
 export function useAtlasStats() {
   return useQuery({
     queryKey: atlasKeys.stats(),

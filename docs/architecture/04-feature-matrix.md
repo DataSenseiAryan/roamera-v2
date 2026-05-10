@@ -201,7 +201,13 @@
 
 ---
 
-## K. Expense Splitting (JustSplit / Expenses)
+## K. Expense Splitting — **Merged into Trip Budget in S12** ⚠️
+
+> **S12 Decision**: Standalone JustSplit (`/api/v1/expenses`) deprecated and removed.
+> Expense splitting is now trip-scoped under `/api/v1/trips/:tripId/budget`.
+> The `expenses.ts` route is removed; SDK `expenses.ts` is deprecated.
+
+## K. Expense Splitting (trip-scoped budget)
 
 | Feature | V1 | TREK | PRD | Priority | Decision |
 |---------|:--:|:----:|:---:|----------|----------|
@@ -341,17 +347,22 @@
 
 ---
 
-## T. Journal / Journey Magazine
+## T. Journal — **Absorbed into My Trips as "Journal" tab in S12** ✅
+
+> **S12 Decision**: Standalone Journey Magazine removed. Journals are now trip-scoped.
+> API: `/api/v1/trips/:tripId/journal` (8 endpoints). Public share: `GET /api/v1/journal/public/:token`.
+> `JournalPanel` component added as 8th tab in trip detail page.
+> SDK `journeys.ts` deprecated; new `trip-journal.ts` hooks.
 
 | Feature | V1 | TREK | PRD | Priority | Decision |
 |---------|:--:|:----:|:---:|----------|----------|
-| Magazine-style travel journal | ❌ | ✅ | ✅ | Medium | ⬜ |PORT
-| Rich content blocks (text/photos/map/quote) | ❌ | ✅ | ✅ | Medium | ⬜ |PORT
-| Journey entry timeline | ❌ | ✅ | ✅ | Medium | ⬜ |PORT
-| Mood / day color coding | ❌ | ✅ | — | Low | ⬜ |Defer
-| Co-authors / contributors | ❌ | ✅ | — | Low | ⬜ |Drop
-| Public share link for journey | ❌ | ✅ | ✅ | Medium | ⬜ |PORT
-| PDF export of journey | ❌ | ✅ | ❌ | Low | ⬜ |PORT
+| Trip-scoped journal (entries per trip) | ❌ | ✅ | ✅ | High | ✅ Built S12 |
+| Rich content blocks (text/heading/quote/divider) | ❌ | ✅ | ✅ | Medium | ✅ Built S12 |
+| Photo upload per entry | ❌ | ✅ | ✅ | Medium | ✅ Built S12 |
+| Public share link for trip journal | ❌ | ✅ | ✅ | Medium | ✅ Built S12 |
+| Mood / day color coding | ❌ | ✅ | — | Low | Defer |
+| Co-authors / contributors | ❌ | ✅ | — | Low | Drop (use trip members) |
+| PDF export of journey | ❌ | ✅ | ❌ | Low | Defer |
 
 ---
 

@@ -32,16 +32,6 @@ export default function CircleDetailScreen() {
     enabled: !!token && !!circleId,
   });
 
-  const { data: splits } = useQuery({
-    queryKey: ['circle-splits', circleId],
-    queryFn: async () => {
-      const res = await getApiClient().get(`/api/v1/circles/${circleId}/justsplit/summary`, {
-        headers: { Authorization: `Bearer ${token}` },
-      }).catch(() => ({ data: null }));
-      return res.data;
-    },
-    enabled: !!token && !!circleId,
-  });
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: dark ? '#0f172a' : '#f8fafc' }}>
@@ -73,22 +63,6 @@ export default function CircleDetailScreen() {
           </View>
         ))}
 
-        {/* JustSplit Summary */}
-        {splits && (
-          <>
-            <Text style={{ fontSize: 18, fontWeight: '700', color: dark ? '#f8fafc' : '#0f172a', marginTop: 16, marginBottom: 12 }}>
-              JustSplit 💸
-            </Text>
-            <View style={{
-              padding: 16, borderRadius: 12,
-              backgroundColor: dark ? '#1e293b' : '#fff',
-            }}>
-              <Text style={{ color: dark ? '#94a3b8' : '#64748b' }}>
-                Total: ₹{splits.total?.toLocaleString() ?? 0}
-              </Text>
-            </View>
-          </>
-        )}
       </ScrollView>
     </SafeAreaView>
   );

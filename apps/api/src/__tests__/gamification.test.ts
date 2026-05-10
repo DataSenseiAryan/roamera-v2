@@ -14,11 +14,16 @@ describe('Gamification API', () => {
     expect(Array.isArray(res.body.badges ?? res.body)).toBe(true);
   });
 
-  it('GET /api/v1/gamification/stats → 200', async () => {
+  it('GET /api/v1/gamification/stats → 200 with atlas fields (S12)', async () => {
     const res = await request(app)
       .get('/api/v1/gamification/stats')
       .set('Authorization', `Bearer ${userToken}`);
     expect(res.status).toBe(200);
+    const stats = res.body.stats ?? res.body;
+    // S12: stats now includes atlas fields
+    expect(typeof (stats.countriesVisited ?? stats.countries)).toBe('number');
+    expect(typeof (stats.percentOfWorld ?? 0)).toBe('number');
+    expect(Array.isArray(stats.continentBreakdown ?? [])).toBe(true);
   });
 
   it('GET /api/v1/gamification/leaderboard → 200 sorted array', async () => {

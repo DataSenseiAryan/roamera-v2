@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { LogOut, User, Settings, Compass, MapPin, Bookmark, Search, Sparkles, Globe, Map, Users, Receipt, BookOpen, Globe2, Shield } from 'lucide-react';
+import { LogOut, User, Settings, Compass, MapPin, Bookmark, Search, Sparkles, Globe, Map, Users, Globe2, Shield } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth-store';
 import { getApiClient } from '@roamera/sdk';
 import { NotificationBell } from './notification-bell';
@@ -55,20 +55,6 @@ export function Navbar() {
             title="Circles"
           >
             <Users className="h-5 w-5" />
-          </Link>
-          <Link
-            href="/justsplit"
-            className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-            title="Split"
-          >
-            <Receipt className="h-5 w-5" />
-          </Link>
-          <Link
-            href="/journeys"
-            className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-            title="Journey Magazine"
-          >
-            <BookOpen className="h-5 w-5" />
           </Link>
           <Link
             href="/atlas"

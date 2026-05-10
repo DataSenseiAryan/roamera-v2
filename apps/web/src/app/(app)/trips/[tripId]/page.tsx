@@ -56,6 +56,7 @@ import { WeatherWidget } from '@/components/trips/weather-widget';
 import { BudgetPanel } from '@/components/trips/budget/budget-panel';
 import { PackingPanel } from '@/components/trips/packing/packing-panel';
 import { CollabPanel } from '@/components/trips/collab/collab-panel';
+import { JournalPanel } from '@/components/trips/journal/journal-panel';
 
 // Load Leaflet dynamically (SSR-safe)
 const TripMap = dynamic(() => import('@/components/trips/trip-map'), { ssr: false, loading: () => (
@@ -235,7 +236,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ tripId: s
   const [showMembers, setShowMembers] = useState(false);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [copySuccess, setCopySuccess] = useState(false);
-  const [activeTab, setActiveTab] = useState<'itinerary' | 'budget' | 'packing' | 'collab' | 'reservations' | 'accommodations' | 'files'>('itinerary');
+  const [activeTab, setActiveTab] = useState<'itinerary' | 'budget' | 'packing' | 'collab' | 'reservations' | 'accommodations' | 'files' | 'journal'>('itinerary');
 
   const trip = tripData?.trip;
   const canEdit = trip?.myRole === 'owner' || trip?.myRole === 'editor';
@@ -381,6 +382,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ tripId: s
           { id: 'reservations' as const, label: 'Reservations', icon: Plane },
           { id: 'accommodations' as const, label: 'Stays', icon: Building2 },
           { id: 'files' as const, label: 'Files', icon: FileText },
+          { id: 'journal' as const, label: 'Journal', icon: Star },
         ]).map((tab) => (
           <button
             key={tab.id}
@@ -710,6 +712,12 @@ export default function TripDetailPage({ params }: { params: Promise<{ tripId: s
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {activeTab === 'journal' && (
+        <div className="min-h-[calc(100vh-220px)] rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 p-6">
+          <JournalPanel tripId={tripId} canEdit={canEdit} />
         </div>
       )}
 

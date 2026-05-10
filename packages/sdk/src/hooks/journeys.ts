@@ -1,3 +1,14 @@
+/**
+ * @deprecated S12: Journey Magazine is absorbed into My Trips as a "Journal" tab.
+ * Use trip-journal hooks from './trip-journal' instead:
+ *   - useTripJournal(tripId)
+ *   - useCreateJournalEntry(tripId)
+ *   - useUpdateJournalEntry(tripId)
+ *   - useDeleteJournalEntry(tripId)
+ *   - useShareTripJournal(tripId)
+ *   - useRevokeTripJournalShare(tripId)
+ * The /api/v1/journeys router is unmounted.
+ */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import type { Journey, JourneyEntry, CreateJourney, CreateEntry } from '@roamera/types';

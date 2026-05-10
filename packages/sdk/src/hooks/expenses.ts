@@ -1,3 +1,8 @@
+/**
+ * @deprecated S12: JustSplit standalone expense groups are merged into trip budget.
+ * Use budget hooks from './budget' for trip-scoped expense tracking.
+ * This file is kept for reference but the /api/v1/expenses router is unmounted.
+ */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   ExpenseGroup, CreateExpenseGroup, UpdateExpenseGroup,

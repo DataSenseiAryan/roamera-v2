@@ -1,20 +1,21 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+// Chat messages use the shared ChatPanel component from @/components/chat/ChatPanel.
+// Notes and polls remain collab-specific.
+import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   Loader2,
-  Send,
   MessageCircle,
   StickyNote,
   BarChart3,
   Plus,
   X,
-  Reply,
   Trash2,
   Pin,
   PinOff,
 } from 'lucide-react';
+import { ChatPanel, type ChatMessage } from '@/components/chat/ChatPanel';
 import {
   WsClient,
   getApiClient,
@@ -33,28 +34,13 @@ import {
   useTripQuery,
   useVoteCollabPoll,
 } from '@roamera/sdk';
-import type { CollabMessage, CollabNote, CollabPoll, User } from '@roamera/types';
+import type { CollabNote, CollabPoll, User } from '@roamera/types';
 import { useAuthStore } from '@/lib/auth-store';
-
-const QUICK_EMOJIS = ['👍', '❤️', '🔥', '😂', '✨'];
 
 const NOTE_COLORS = ['#fef3c7', '#dbeafe', '#dcfce7', '#fce7f3', '#ffedd5'];
 
 function initials(username: string) {
   return username.slice(0, 2).toUpperCase();
-}
-
-function formatMsgTime(iso: string) {
-  try {
-    return new Date(iso).toLocaleString('en-IN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-  } catch {
-    return '';
-  }
-}
-
-function reactionList(m: CollabMessage): { emoji: string; count: number }[] {
-  const rec = m.reactions ?? {};
-  return Object.entries(rec).map(([emoji, count]) => ({ emoji, count }));
 }
 
 export function CollabPanel({ tripId, canEdit }: { tripId: string; canEdit: boolean }) {
@@ -142,32 +128,25 @@ export function CollabPanel({ tripId, canEdit }: { tripId: string; canEdit: bool
 function CollabChat({ tripId, user }: { tripId: string; user: User | null }) {
   const { data: tripData } = useTripQuery(tripId);
   const ownerId = tripData?.trip.ownerId;
-  const { data: messages = [], isLoading } = useCollabMessages(tripId);
+  const { data: rawMessages = [], isLoading } = useCollabMessages(tripId);
   const sendMessage = useSendCollabMessage();
   const reactMessage = useReactToCollabMessage();
   const deleteMessage = useDeleteCollabMessage();
 
-  const listEndRef = useRef<HTMLDivElement>(null);
-  const [draft, setDraft] = useState('');
-  const [replyTo, setReplyTo] = useState<CollabMessage | null>(null);
+  const messages: ChatMessage[] = rawMessages.map((m) => ({
+    id: m.id,
+    userId: m.userId,
+    content: m.content,
+    replyToId: m.replyToId ?? null,
+    isDeleted: m.isDeleted ?? false,
+    reactions: m.reactions ?? {},
+    userReaction: m.myReactions?.[0] ?? null,
+    createdAt: m.createdAt,
+    author: { id: m.userId, username: m.username, avatarUrl: null },
+  }));
 
-  const scrollToBottom = useCallback(() => {
-    listEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, []);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages.length, scrollToBottom]);
-
-  const msgById = new Map(messages.map((m) => [m.id, m]));
-
-  const handleSend = async () => {
-    const text = draft.trim();
-    if (!text) return;
-    await sendMessage.mutateAsync({ tripId, content: text, replyToId: replyTo?.id });
-    setDraft('');
-    setReplyTo(null);
-  };
+  const canEdit = !!user;
+  const isOwner = !!ownerId && user?.id === ownerId;
 
   return (
     <div className="flex flex-col h-[min(70vh,560px)] bg-white dark:bg-slate-900 rounded-2xl shadow-card border border-slate-100 dark:border-slate-800 overflow-hidden">
@@ -175,118 +154,23 @@ function CollabChat({ tripId, user }: { tripId: string; user: User | null }) {
         <span className="text-white text-sm font-semibold">Trip chat</span>
         {isLoading && <Loader2 className="h-4 w-4 text-white/90 animate-spin" />}
       </div>
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/70 dark:bg-slate-950/50">
-        {messages.map((m) => {
-          const parent = m.replyToId ? msgById.get(m.replyToId) : undefined;
-          const recs = reactionList(m);
-          const mine = new Set(m.myReactions ?? []);
-          const canDelete = user && (m.userId === user.id || ownerId === user.id);
-
-          return (
-            <div key={m.id} className="flex gap-2">
-              <div className="w-8 h-8 rounded-full bg-teal-600 flex items-center justify-center text-white text-[10px] font-bold shrink-0">
-                {initials(m.username)}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-sm font-semibold text-slate-900 dark:text-white">{m.username}</span>
-                  <span className="text-[10px] text-slate-400">{formatMsgTime(m.createdAt)}</span>
-                </div>
-                {parent && (
-                  <div className="mt-0.5 mb-1 pl-2 border-l-2 border-orange-400/70 text-[11px] text-slate-500 line-clamp-2">
-                    <span className="font-medium">{parent.username}: </span>
-                    {parent.isDeleted ? <span className="italic">[Message deleted]</span> : parent.content}
-                  </div>
-                )}
-                <p className="text-sm text-slate-800 dark:text-slate-100 whitespace-pre-wrap break-words">
-                  {m.isDeleted ? <span className="text-slate-400 italic">[Message deleted]</span> : m.content}
-                </p>
-                {!m.isDeleted && (
-                  <div className="mt-1 flex flex-wrap items-center gap-1">
-                    {recs.map((r) => (
-                      <button
-                        key={r.emoji}
-                        type="button"
-                        onClick={() => void reactMessage.mutateAsync({ tripId, messageId: m.id, emoji: r.emoji })}
-                        className={`px-2 py-0.5 rounded-full border text-xs ${
-                          mine.has(r.emoji)
-                            ? 'border-teal-500 bg-teal-50 dark:bg-teal-950/50'
-                            : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900'
-                        }`}
-                      >
-                        {r.emoji} <span className="text-slate-500">{r.count}</span>
-                      </button>
-                    ))}
-                    <span className="text-slate-300 dark:text-slate-600">|</span>
-                    {QUICK_EMOJIS.map((em) => (
-                      <button
-                        key={em}
-                        type="button"
-                        className="text-base px-0.5 hover:scale-110 transition"
-                        onClick={() => void reactMessage.mutateAsync({ tripId, messageId: m.id, emoji: em })}
-                      >
-                        {em}
-                      </button>
-                    ))}
-                    <button
-                      type="button"
-                      className="ml-1 p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500"
-                      onClick={() => setReplyTo(m)}
-                    >
-                      <Reply className="h-3.5 w-3.5" />
-                    </button>
-                    {canDelete && (
-                      <button
-                        type="button"
-                        className="p-1 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500"
-                        onClick={() => void deleteMessage.mutateAsync({ tripId, messageId: m.id })}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
-        <div ref={listEndRef} />
-      </div>
-      <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
-        {replyTo && (
-          <div className="mb-2 flex justify-between gap-2 px-3 py-2 rounded-xl bg-orange-50 dark:bg-orange-950/30 border border-orange-100 dark:border-orange-900 text-xs">
-            <div className="min-w-0">
-              <span className="font-medium text-orange-800 dark:text-orange-200">Reply to {replyTo.username}</span>
-              <p className="truncate text-slate-600 dark:text-slate-400">{replyTo.content}</p>
-            </div>
-            <button type="button" onClick={() => setReplyTo(null)}>
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        )}
-        <div className="flex gap-2">
-          <textarea
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                void handleSend();
-              }
-            }}
-            rows={2}
-            className="flex-1 resize-none rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-3 py-2 text-sm"
-            placeholder="Share an update…"
-          />
-          <button
-            type="button"
-            disabled={sendMessage.isPending || !draft.trim()}
-            onClick={() => void handleSend()}
-            className="self-end p-3 rounded-xl bg-teal-600 text-white disabled:opacity-50"
-          >
-            {sendMessage.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
-          </button>
-        </div>
+      <div className="flex-1 min-h-0">
+        <ChatPanel
+          messages={messages}
+          currentUserId={user?.id}
+          canEdit={canEdit}
+          isLoading={isLoading}
+          placeholder="Share an update..."
+          onSend={async (content, replyToId) => {
+            await sendMessage.mutateAsync({ tripId, content, replyToId });
+          }}
+          onDelete={async (messageId) => {
+            await deleteMessage.mutateAsync({ tripId, messageId });
+          }}
+          onReact={async (messageId, emoji) => {
+            await reactMessage.mutateAsync({ tripId, messageId, emoji });
+          }}
+        />
       </div>
     </div>
   );

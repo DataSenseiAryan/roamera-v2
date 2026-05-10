@@ -71,6 +71,13 @@
       "when": 1778361951547,
       "tag": "0009_plain_rhodey",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1778403342021,
+      "tag": "0010_good_ultragirl",
+      "breakpoints": true
     }
   ]
 }

@@ -31,6 +31,7 @@ import budgetRouter from './budget';
 import collabRouter from './collab';
 import packingRouter from './packing';
 import tripFilesRouter from './trip-files';
+import tripJournalRouter from './trip-journal';
 
 const router = Router();
 const upload = multer({ limits: { fileSize: 5 * 1024 * 1024 }, storage: multer.memoryStorage() });
@@ -162,6 +163,7 @@ router.use('/:tripId/budget', budgetRouter);
 router.use('/:tripId/packing', packingRouter);
 router.use('/:tripId/collab', collabRouter);
 router.use('/:tripId/files', tripFilesRouter);
+router.use('/:tripId/journal', tripJournalRouter);
 
 // GET /api/v1/trips/:tripId — trip detail
 router.get('/:tripId', authenticate, async (req: AuthRequest, res, next) => {

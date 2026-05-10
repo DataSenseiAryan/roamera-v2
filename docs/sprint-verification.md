@@ -1011,3 +1011,77 @@ curl -s -X POST "$BASE/api/v1/mcp/oauth/register" \
 - [x] Web /settings/mcp: list/create/revoke static tokens + Claude Desktop usage instructions
 - [x] Web /oauth/authorize: consent page shows scopes, allow/deny
 - [x] Web dark mode: next-themes ThemeProvider + toggle in settings (system default)
+
+---
+
+## Sprint 12 — Production Launch
+
+### Feature Consolidation
+
+#### Merge 1: JustSplit → Trip Budget
+```bash
+# Old route should be gone
+curl -s "$BASE/api/v1/expenses/groups" | jq .  # → 404
+
+# New trip-scoped budget
+curl -s "$BASE/api/v1/trips/$TRIP_ID/budget" -H "Authorization: Bearer $TOKEN" | jq .items
+```
+
+#### Merge 2: Chat Unification
+```bash
+# Trip collab chat
+curl -s "$BASE/api/v1/trips/$TRIP_ID/collab/messages" -H "Authorization: Bearer $TOKEN" | jq .messages
+
+# Circle chat
+curl -s "$BASE/api/v1/circles/$CIRCLE_ID/messages" -H "Authorization: Bearer $TOKEN" | jq .messages
+```
+
+#### Merge 3: Atlas Stats → Gamification Stats
+```bash
+# Old atlas/stats should have Deprecation header
+curl -v "$BASE/api/v1/atlas/stats" -H "Authorization: Bearer $TOKEN" 2>&1 | grep -i deprecation
+
+# New merged stats
+curl -s "$BASE/api/v1/gamification/stats" -H "Authorization: Bearer $TOKEN" | jq '{countriesVisited, percentOfWorld, continentBreakdown}'
+```
+
+#### Merge 4: Journey Magazine → Trip Journal
+```bash
+# Old journeys route should be gone
+curl -s "$BASE/api/v1/journeys" | jq .  # → 404
+
+# New trip-scoped journal
+curl -s "$BASE/api/v1/trips/$TRIP_ID/journal" -H "Authorization: Bearer $TOKEN" | jq .entries
+```
+
+### Testing
+```bash
+# Run all unit tests (should be 131 passing)
+pnpm --filter api test
+
+# Run E2E (requires API on :4000, Web on :3001)
+pnpm --filter @roamera/web test:e2e
+
+# Load test (requires API running)
+API_URL=http://localhost:4000 AUTH_TOKEN=$TOKEN pnpm --filter api load-test
+```
+
+### Sprint 12 Acceptance Criteria
+
+- [x] 131 API unit tests pass (`pnpm --filter api test`)
+- [x] `/api/v1/expenses/groups` returns 404 (removed)
+- [x] `/api/v1/journeys` returns 404 (removed)
+- [x] `GET /api/v1/gamification/stats` returns `countriesVisited`, `percentOfWorld`, `continentBreakdown`
+- [x] `GET /api/v1/atlas/stats` returns `Deprecation` header pointing to gamification/stats
+- [x] `GET /api/v1/trips/:id/journal` returns `{ entries: [], journal: {...} }`
+- [x] `POST /api/v1/trips/:id/journal` creates journal entry with content blocks
+- [x] `POST /api/v1/trips/:id/journal/share` generates public token
+- [x] `GET /api/v1/journal/public/:token` returns journal without auth
+- [x] Web: Trip detail page has "Journal" tab (8th tab)
+- [x] Web: Navbar has no "Journey Magazine" or "JustSplit" links
+- [x] Web: `/journeys`, `/justsplit` pages return 404
+- [x] Playwright E2E specs created in `apps/web/e2e/`
+- [x] Load test script at `apps/api/src/load-test.ts`
+- [x] `.github/workflows/ci.yml` with 4 jobs: api-tests, ai-tests, web-build, docker-build
+- [x] `sharp` installed in `apps/web`
+- [x] SQLite WAL mode applied on API startup

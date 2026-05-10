@@ -14,6 +14,7 @@ export * from './hooks/circles';
 export * from './hooks/collab';
 export * from './hooks/expenses';
 export * from './hooks/journeys';
+export * from './hooks/trip-journal';
 export * from './hooks/atlas';
 export * from './hooks/gamification';
 export * from './hooks/notifications';

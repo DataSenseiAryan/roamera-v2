@@ -11,11 +11,20 @@ export const BadgeSchema = z.object({
 
 export type Badge = z.infer<typeof BadgeSchema>;
 
+export const ContinentBreakdownSchema = z.object({
+  continent: z.string(),
+  count: z.number(),
+});
+
 export const TravelStatsSchema = z.object({
   posts: z.number(),
   trips: z.number(),
   countries: z.number(),
   badges: z.number(),
+  // Atlas fields merged in S12
+  countriesVisited: z.number().optional(),
+  percentOfWorld: z.number().optional(),
+  continentBreakdown: z.array(ContinentBreakdownSchema).optional(),
 });
 
 export type TravelStats = z.infer<typeof TravelStatsSchema>;

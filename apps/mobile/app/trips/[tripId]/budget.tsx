@@ -8,10 +8,10 @@ import { useAuthStore } from '../../../lib/auth';
 interface Expense {
   id: string;
   name: string;
-  amount: number;
+  totalPrice: number;
+  amount?: number;
   category?: string;
   currency: string;
-  date?: string;
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -28,29 +28,21 @@ export default function BudgetScreen() {
   const dark = useColorScheme() === 'dark';
   const token = useAuthStore(s => s.accessToken);
 
-  const { data: summary } = useQuery({
-    queryKey: ['budget-summary', tripId],
+  const { data: budgetData } = useQuery({
+    queryKey: ['budget', tripId],
     queryFn: async () => {
-      const res = await getApiClient().get(`/api/v1/trips/${tripId}/budget/summary`, {
+      const res = await getApiClient().get(`/api/v1/trips/${tripId}/budget`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      return res.data;
+      return res.data as { items: Expense[]; summary: { grandTotal: number; budget?: number } };
     },
     enabled: !!token && !!tripId,
   });
 
-  const { data: expenses } = useQuery({
-    queryKey: ['expenses', tripId],
-    queryFn: async () => {
-      const res = await getApiClient().get(`/api/v1/trips/${tripId}/expenses`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      return (res.data.items ?? res.data ?? []) as Expense[];
-    },
-    enabled: !!token && !!tripId,
-  });
+  const summary = budgetData?.summary;
+  const expenses = budgetData?.items;
 
-  const total = expenses?.reduce((sum, e) => sum + e.amount, 0) ?? 0;
+  const total = summary?.grandTotal ?? expenses?.reduce((sum, e) => sum + e.amount, 0) ?? 0;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: dark ? '#0f172a' : '#f8fafc' }}>
@@ -64,9 +56,9 @@ export default function BudgetScreen() {
           <Text style={{ color: '#fff', fontSize: 32, fontWeight: '700' }}>
             ₹{total.toLocaleString()}
           </Text>
-          {summary?.budget && (
+          {summary?.budget != null && (
             <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13 }}>
-              of ₹{summary.budget.toLocaleString()} budget
+              of ₹{(summary.budget as number).toLocaleString()} budget
             </Text>
           )}
         </View>
@@ -94,7 +86,7 @@ export default function BudgetScreen() {
               )}
             </View>
             <Text style={{ fontSize: 16, fontWeight: '700', color: '#0d9488' }}>
-              ₹{expense.amount.toLocaleString()}
+              ₹{(expense.totalPrice ?? expense.amount ?? 0).toLocaleString()}
             </Text>
           </View>
         ))}

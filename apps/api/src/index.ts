@@ -3,6 +3,7 @@ import http from 'http';
 import { WebSocketServer } from 'ws';
 
 import { createApp } from './app';
+import { applyDbPragmas } from './db/client';
 import { env } from './lib/env';
 import { logger } from './lib/logger';
 import { initWsManager } from './lib/ws';
@@ -20,7 +21,8 @@ server.on('upgrade', (request, socket, head) => {
   wsManager.handleUpgrade(request, socket as never, head);
 });
 
-server.listen(env.PORT, () => {
+server.listen(env.PORT, async () => {
+  await applyDbPragmas();
   logger.info(`Roamera API running on http://localhost:${env.PORT}`);
   logger.info(`WebSocket available at ws://localhost:${env.PORT}/ws?token=<ws_token>`);
   logger.info(`Environment: ${env.NODE_ENV}`);

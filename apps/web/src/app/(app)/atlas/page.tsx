@@ -4,11 +4,18 @@ import { useState } from 'react';
 import { Globe2, Map, TrendingUp, Check, X, Search, Loader2 } from 'lucide-react';
 import {
   useVisitedCountries,
-  useAtlasStats,
   useMarkCountryVisited,
   useUnmarkCountry,
+  useTravelStats,
 } from '@roamera/sdk';
-import type { VisitedCountry, AtlasStats } from '@roamera/types';
+import type { VisitedCountry, TravelStats } from '@roamera/types';
+
+type AtlasStats = {
+  totalCountries: number;
+  totalPossible: number;
+  percentage: number;
+  continentBreakdown: Array<{ continent: string; count: number }>;
+};
 
 // Static list of countries for search autocomplete
 const COUNTRY_LIST = [
@@ -130,9 +137,19 @@ function CountryChip({ country, onUnmark }: { country: VisitedCountry; onUnmark:
 
 export default function AtlasPage() {
   const { data: countries, isLoading: countriesLoading } = useVisitedCountries();
-  const { data: stats, isLoading: statsLoading } = useAtlasStats();
+  const { data: travelStats, isLoading: statsLoading } = useTravelStats();
   const markVisited = useMarkCountryVisited();
   const unmarkCountry = useUnmarkCountry();
+
+  // Map gamification stats to the AtlasStats shape
+  const stats: AtlasStats | undefined = travelStats
+    ? {
+        totalCountries: travelStats.countriesVisited ?? travelStats.countries,
+        totalPossible: 195,
+        percentage: travelStats.percentOfWorld ?? 0,
+        continentBreakdown: travelStats.continentBreakdown ?? [],
+      }
+    : undefined;
 
   const [search, setSearch] = useState('');
 

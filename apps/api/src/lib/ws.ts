@@ -193,7 +193,15 @@ export function initWsManager(wss: WebSocketServer, tokenStore: WsTokenStore): W
   return wsManager;
 }
 
+const noopWsManager = {
+  broadcast: () => {},
+  broadcastToUser: () => {},
+  subscribe: () => {},
+  unsubscribe: () => {},
+  handleUpgrade: () => {},
+} as unknown as WsManager;
+
 export function getWsManager(): WsManager {
-  if (!wsManager) throw new Error('WsManager not initialised — call initWsManager first');
+  if (!wsManager) return noopWsManager;
   return wsManager;
 }

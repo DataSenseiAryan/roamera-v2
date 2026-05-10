@@ -2,6 +2,8 @@ import { Router } from 'express';
 import express from 'express';
 import path from 'path';
 
+import { eq, and, asc } from 'drizzle-orm';
+
 import healthRouter from './health';
 import authRouter from './auth';
 import usersRouter from './users';
@@ -23,6 +25,9 @@ import adminRouter, { getActiveNotices } from './admin';
 import invitesRouter from './invites';
 import mcpRouter from './mcp';
 import pushRouter from './push';
+import { db } from '../db/client';
+import { journeys, journeyEntries, trips } from '../db/schema';
+import { getPublicUrl } from '../lib/storage';
 
 const router = Router();
 
@@ -56,11 +61,11 @@ router.use('/api/v1/packing-templates', publicPackingTemplatesRouter);
 
 router.use('/api/v1/circles', circlesRouter);
 
-// Sprint 7: JustSplit (added in S7)
-router.use('/api/v1/expenses', expensesRouter);
+// Sprint 7: JustSplit — merged into trip budget in S12; router unmounted
+// router.use('/api/v1/expenses', expensesRouter);
 
-// Sprint 8: Journey + Atlas + Gamification
-router.use('/api/v1/journeys', journeysRouter);
+// Sprint 8: Journey Magazine — merged into /trips/:tripId/journal in S12
+// router.use('/api/v1/journeys', journeysRouter);
 router.use('/api/v1/atlas', atlasRouter);
 router.use('/api/v1/gamification', gamificationRouter);
 
@@ -73,6 +78,29 @@ router.get('/api/v1/notices', getActiveNotices as never);
 
 // Sprint 10: Invites
 router.use('/api/v1/invites', invitesRouter);
+
+// Sprint 12: Public journal view (no tripId needed — just the share token)
+router.get('/api/v1/journal/public/:token', async (req, res, next) => {
+  try {
+    const token = req.params.token as string;
+    const rows = await db.select().from(journeys).where(
+      and(eq(journeys.shareToken, token), eq(journeys.isPublic, true))
+    ).limit(1);
+    const j = rows[0];
+    if (!j) { res.status(404).json({ error: 'Journal not found' }); return; }
+
+    const entries = await db.select().from(journeyEntries).where(eq(journeyEntries.journeyId, j.id)).orderBy(asc(journeyEntries.orderIndex));
+    const tripRows = j.tripId ? await db.select().from(trips).where(eq(trips.id, j.tripId)).limit(1) : [];
+    const trip = tripRows[0] ?? null;
+    res.json({
+      journal: { ...j, coverUrl: j.coverKey ? getPublicUrl(j.coverKey) : null },
+      entries,
+      trip: trip ? { id: trip.id, title: trip.title } : null,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
 
 // Sprint 11: MCP + OAuth + Push
 router.use('/api/v1/mcp', mcpRouter);
